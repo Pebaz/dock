@@ -1,13 +1,6 @@
 import sys  # Make sure this gets ingnored in output file
 
 
-def dock(**kwargs):
-    def wrapper(func):
-        func.__dock__ = kwargs
-        return func
-    return wrapper
-
-
 @dock(  # Says "include this function in the generated docs"
     age='Gets returned without any processing',
     returns='The same thing that was passed in',
