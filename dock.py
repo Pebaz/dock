@@ -6,6 +6,52 @@ from pathlib import Path
 T = TypeVar('T')
 
 
+
+
+
+# ! Only the classes/functions/methods marked with __dock__ should be included
+# ! in documentation. This is not an all-encompasing documentation generator.
+
+
+
+class DockFunction:
+    def __init__(self, func):
+        ann = getattr(func, '__annotations__', {})
+        func.__dock__ = {
+            '__name__': func.__name__,
+            '__returntype__': ann.get('return', None),
+            '__returns__': returns,
+            '__raises__': raises,
+            '__annotations__': ann,
+            **argdocs
+        }
+
+class DockClass:
+    def __init__(self, class_):
+        self.heirarchy = class_.mro()
+        self.heirarchy.pop(0)  # Don't list self as it's implied
+        print('heirarchy :'.rjust(20), self.heirarchy)
+
+        self.annotations = getattr(class_, '__annotations__', {})
+        print('annotations :'.rjust(20), self.annotations)
+
+        self.desciption = class_.__doc__
+        print('desciption :'.rjust(20), repr(self.desciption))
+
+        self.name = class_.__name__
+        print('name :'.rjust(20), self.name)
+
+        self.inherited_members = set()
+        for ancestor in self.heirarchy:
+            for member in ancestor.__dict__:
+                if not member.startswith('__'):
+                    self.inherited_members.add(member)
+        print('inherited_members :'.rjust(20), self.inherited_members)
+
+        self.members = {i for i in class_.__dict__ if not i.startswith('__')}
+        print('members :'.rjust(20), self.members)
+
+
 def dock(returns: str = None, raises: str = None, **argdocs) -> T:
     """
     * Must be defined last so that it can put the annotation on the last func.
@@ -18,24 +64,12 @@ def dock(returns: str = None, raises: str = None, **argdocs) -> T:
     # TODO(pebaz): Handle class input @dock(class)
     # TODO(pebaz): Handle bad input @dock(3)
 
-    def inner(func: T) -> T:
-        ann = getattr(func, '__annotations__', {})
-
-        # TODO(sam): This is not appropriate for functions and classes.
-        # TODO(sam): func.__doc__ = DockFunction(func)
-        # TODO(sam): func.__doc__ = DockClass(func_or_class)
-
-        func.__dock__ = {
-            '__name__': func.__name__,
-            '__returntype__': ann.get('return', None),
-            '__returns__': returns,
-            '__raises__': raises,
-            '__annotations__': ann,
-            **argdocs
-        }
-
-
-        return func
+    def inner(func_or_class: T) -> T:
+        if isinstance(func_or_class, type):
+            func_or_class.__dock__ = DockClass(func_or_class)
+        else:
+            func_or_class.__dock__ = DockFunction(func_or_class)
+        return func_or_class
     return inner
 
 
