@@ -9,9 +9,32 @@ T = TypeVar('T')
 def dock(returns: str = None, raises: str = None, **argdocs) -> T:
     """
     * Must be defined last so that it can put the annotation on the last func.
+
+    NOTE: This essentially does the work of introspecting the function now, so
+    that Dock doesn't have to do it when generating documentation.
     """
+
+    # TODO(pebaz): Handle empty input @dock
+    # TODO(pebaz): Handle class input @dock(class)
+    # TODO(pebaz): Handle bad input @dock(3)
+
     def inner(func: T) -> T:
-        func.__dock__ = {'returns' : returns, 'raises' : raises, **argdocs}
+        ann = getattr(func, '__annotations__', {})
+
+        # TODO(sam): This is not appropriate for functions and classes.
+        # TODO(sam): func.__doc__ = DockFunction(func)
+        # TODO(sam): func.__doc__ = DockClass(func_or_class)
+
+        func.__dock__ = {
+            '__name__': func.__name__,
+            '__returntype__': ann.get('return', None),
+            '__returns__': returns,
+            '__raises__': raises,
+            '__annotations__': ann,
+            **argdocs
+        }
+
+
         return func
     return inner
 
