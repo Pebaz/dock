@@ -2,6 +2,7 @@ import sys
 from typing import TypeVar
 from pathlib import Path
 from collections import deque
+import importlib
 
 
 T = TypeVar('T')
@@ -93,14 +94,6 @@ def dock(returns: str = None, raises: str = None, **argdocs) -> T:
     return inner
 
 
-def import_(filename: Path) -> ['MODULE']:
-    import importlib.util
-    spec = importlib.util.spec_from_file_location(filename.stem, filename)
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    return mod
-
-
 def introspect(obj: object, queue: deque):
     for attr in obj.__dict__.values():
         if hasattr(attr, '__dock__'):
@@ -109,6 +102,56 @@ def introspect(obj: object, queue: deque):
         
         if isinstance(attr, type):
             introspect(attr, queue)
+
+def import_(filename: Path) -> ['MODULE']:
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(filename.stem, filename)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def introspect_(path: Path, queue: deque):
+    if path.stem == '__pycache__':
+        return
+
+    print('...........', path)
+
+    if path.is_dir():
+        sys.path.append(str(path.absolute()))
+
+        try:
+            package = importlib.import_module(path.stem)
+            print('Docking:', package)
+
+            introspect(package, queue)
+        except:
+            pass
+
+        for entry in path.iterdir():
+            introspect_(entry, queue)
+
+    else:
+        if path.suffix != '.py':
+            return
+        
+        try:
+            relative = path#.relative_to(Path().resolve())
+            print('....', '.'.join([*relative.parts[:-1], relative.stem]))
+            module = importlib.import_module(
+                '.'.join([*relative.parts[:-1], relative.stem])
+            )
+            introspect(module, queue)
+            return
+        except:
+            pass
+
+        # module = import_(path)
+        # sys.path.append(str(path.parent.absolute()))
+        module = importlib.import_module(path.stem)
+        print('Docking:', module)
+
+        introspect(module, queue)
 
 
 def cli(args):
@@ -123,23 +166,35 @@ def cli(args):
         print(f"{given_path} doesn't exist")
         quit()
 
+    # Ammend PYTHONPATH environment variable so subsequent imports work
+    if not given_path.parent == Path():
+        sys.path.append(str(given_path.parent.resolve()))
+
     queue = deque()  # deque is threadsafe for append & popleft. Use it
 
-    if given_path.is_dir():
-        package = given_path
-        print(package)
-    else:
-        module = import_(given_path)
-        print('Docking:', module)
+    introspect_(given_path, queue)
 
-        introspect(module, queue)
+    # if given_path.is_dir():
+    #     package = importlib.import_module(given_path.stem)
+    #     print('Docking:', package)
+
+    #     introspect(package, queue)
+
+    # else:
+    #     # module = import_(given_path)
+    #     module = importlib.import_module(given_path.stem)
+    #     print('Docking:', module)
+
+    #     introspect(module, queue)
 
     print()
     print('-' * 80)
 
     while queue:
         item = queue.popleft()
-        print(item.__dock__)
+        print(getattr(item, '__name__', None), item.__dock__)
+
+    # * cls; python dock.py test_dock.py
 
 
 # Run the CLI or allow the module to be callable
