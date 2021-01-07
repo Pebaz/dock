@@ -21,9 +21,12 @@ class Foo(Parent):
     ```
     """
     X = 'y'
+
+    @dock
     def __init__(self):
         Parent.__init__(self)
         self.field1 = 'asdf'
 
+    @dock
     def hello(self):
         ...
