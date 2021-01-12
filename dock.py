@@ -8,7 +8,15 @@ import importlib
 T = TypeVar('T')
 
 
-
+class DockException(Exception):
+    """
+    Signals that a usage of the `dock` decorator is invalid.
+    """
+    def __init__(self):
+        Exception.__init__(self, (
+            'Invalid usage of the `dock` decorator. '
+            'Please use as a decorator atop classes, methods, and functions.'
+        ))
 
 
 # ! Only the classes/functions/methods marked with __dock__ should be included
@@ -100,8 +108,7 @@ def dock(returns: str = None, raises: str = None, **arg_or_field_docs) -> T:
 
     # TODO(pebaz): Handle bad input @dock(3)
     else:
-        ...
-        print('!!!!!!!!')
+        raise DockException()
 
 
 def introspect(obj: object, queue: deque):

@@ -53,5 +53,5 @@ def long_name3(asdf):
 def long_name4(asdf: Foo):
     ...
 
-dock(3)
-dock()
+def asdf123():
+    ...
