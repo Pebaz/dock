@@ -54,7 +54,7 @@ class DockClass:
         print('members :'.rjust(20), self.members)
 
 
-def dock(returns: str = None, raises: str = None, **argdocs) -> T:
+def dock(returns: str = None, raises: str = None, **arg_or_field_docs) -> T:
     """
     * Must be defined last so that it can put the annotation on the last func.
 
@@ -62,7 +62,19 @@ def dock(returns: str = None, raises: str = None, **argdocs) -> T:
     that Dock doesn't have to do it when generating documentation.
     """
 
-    # TODO(pebaz): Handle empty input @dock
+    # Handle: @dock
+    if callable(returns) or isinstance(returns, type):
+        print('CONDITION 1')
+
+    # Handle: @dock(...)
+    elif isinstance(returns, str) or returns is None:
+        print('CONDITION 2')
+
+
+
+
+    print('__dock__:', type(returns), callable(returns), isinstance(returns, type), returns)
+
     # TODO(pebaz): Handle class input @dock(class)
     # TODO(pebaz): Handle bad input @dock(3)
 
@@ -79,13 +91,13 @@ def dock(returns: str = None, raises: str = None, **argdocs) -> T:
     def inner(func_or_class: T) -> T:
         # ! print(func_or_class)
         if isinstance(func_or_class, type):
-            func_or_class.__dock__ = {**argdocs}
+            func_or_class.__dock__ = {**arg_or_field_docs}
         else:
             func_or_class.__dock__ = {
                 # Don't need to annotation with type (class/func) since we have a direct reference
                 'returns': returns,
                 'raises': raises,
-                **argdocs
+                **arg_or_field_docs
             }
         return func_or_class
 
@@ -102,56 +114,6 @@ def introspect(obj: object, queue: deque):
         
         if isinstance(attr, type):
             introspect(attr, queue)
-
-def import_(filename: Path) -> ['MODULE']:
-    import importlib.util
-    spec = importlib.util.spec_from_file_location(filename.stem, filename)
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    return mod
-
-
-def introspect_(path: Path, queue: deque):
-    if path.stem == '__pycache__':
-        return
-
-    print('...........', path)
-
-    if path.is_dir():
-        sys.path.append(str(path.absolute()))
-
-        try:
-            package = importlib.import_module(path.stem)
-            print('Docking:', package)
-
-            introspect(package, queue)
-        except:
-            pass
-
-        for entry in path.iterdir():
-            introspect_(entry, queue)
-
-    else:
-        if path.suffix != '.py':
-            return
-        
-        try:
-            relative = path#.relative_to(Path().resolve())
-            print('....', '.'.join([*relative.parts[:-1], relative.stem]))
-            module = importlib.import_module(
-                '.'.join([*relative.parts[:-1], relative.stem])
-            )
-            introspect(module, queue)
-            return
-        except:
-            pass
-
-        # module = import_(path)
-        # sys.path.append(str(path.parent.absolute()))
-        module = importlib.import_module(path.stem)
-        print('Docking:', module)
-
-        introspect(module, queue)
 
 
 def get_modules(path):
@@ -172,7 +134,6 @@ def get_modules(path):
     )
 
     return modules
-
 
 
 def cli(args):
@@ -202,13 +163,17 @@ def cli(args):
 
     print('* Introspecting')
 
-    for p in modules:
+    for module in modules:
         try:
-            mod = importlib.import_module(p if '.__init__' not in p else p.replace('.__init__', ''))
-            sys.modules[p] = mod
-            introspect(mod, queue)
+            mod = importlib.import_module(module)
+
+            # Allows other modules to import this module
+            sys.modules[module] = mod
+
+            introspect(mod, queue)  # Scrape out all __dock__ed members
         except Exception as e:
-            print('WARNING: Failed to import', p, ':', e)
+            print('WARNING: Failed to import', module, ':', e)
+
     print('*')
 
     print()

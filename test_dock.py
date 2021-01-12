@@ -27,6 +27,11 @@ class Foo(Parent):
         Parent.__init__(self)
         self.field1 = 'asdf'
 
-    @dock
+    @dock()
     def hello(self):
         ...
+
+
+@dock
+class AnotherClass:
+    """Can you see me?"""
