@@ -154,6 +154,27 @@ def introspect_(path: Path, queue: deque):
         introspect(module, queue)
 
 
+def get_modules(path):
+    modules = []
+
+    if path.is_dir():
+        for entry in path.iterdir():
+            modules.extend(get_modules(entry))
+
+    elif path.suffix == '.py':
+        mod = '.'.join([*path.parts][:-1] + [path.stem])
+        # ? Remove __init__.py's
+        modules.append(mod)
+
+    # Ensures that packages (__init__.py) are imported prior to their modules
+    modules.sort(
+        key=lambda x: x.count('.') - 0.1 if '__init__' in x else x.count('.')
+    )
+
+    return modules
+
+
+
 def cli(args):
     if not args:
         print('Dock - Python documentation generator')
@@ -166,62 +187,38 @@ def cli(args):
         print(f"{given_path} doesn't exist")
         quit()
 
-    # Ammend PYTHONPATH environment variable so subsequent imports work
-    if not given_path.parent == Path():
-        sys.path.append(str(given_path.parent.resolve()))
+    # ! THIS IS VITALLY IMPORTANT (prevents site-packages preferal)
+    sys.path.insert(0, str(Path().resolve()))
 
     queue = deque()  # deque is threadsafe for append & popleft. Use it
 
-    def get_modules(path, modules):
-        if path.is_dir():
-            for p in path.iterdir():
-                get_modules(p, modules)
-        elif path.suffix == '.py':
-            mod = '.'.join([*path.parts][:-1] + [path.stem])
-            print(mod)
-            modules.append(mod)
-                
+    print('* Modules')
+    modules = get_modules(given_path)
 
-    print('*')
-    modules = []
-    get_modules(given_path, modules)
-    modules.sort(key=lambda x: x.count('.') if '__init__' not in x else x.count('.') - 0.1)
-    print('*')
+    for m in modules:
+        print(m)
 
-    # ! THIS IS VITALLY IMPORTANT (prevents site-packages preferal)
-    import sys; sys.path.insert(0, str(Path().resolve()))
+    print('*\n')
+
+    print('* Introspecting')
 
     for p in modules:
-        print(1, p)
         try:
             mod = importlib.import_module(p if '.__init__' not in p else p.replace('.__init__', ''))
             sys.modules[p] = mod
-            # print(dir(mod))
+            introspect(mod, queue)
         except Exception as e:
             print('WARNING: Failed to import', p, ':', e)
-        print(2)
     print('*')
-
-
-    # if given_path.is_dir():
-    #     package = importlib.import_module(given_path.stem)
-    #     print('Docking:', package)
-
-    #     introspect(package, queue)
-
-    # else:
-    #     # module = import_(given_path)
-    #     module = importlib.import_module(given_path.stem)
-    #     print('Docking:', module)
-
-    #     introspect(module, queue)
 
     print()
     print('-' * 80)
+    print('* Docking')
 
     while queue:
         item = queue.popleft()
-        print(getattr(item, '__name__', None), item.__dock__)
+        name = getattr(item, '__name__', '') + ':'
+        print(name.rjust(15), item.__dock__)
 
     # * cls; python dock.py test_dock.py
 
