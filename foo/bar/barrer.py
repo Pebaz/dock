@@ -2,4 +2,4 @@ import dock
 
 @dock
 def asdf():
-    pass
+    "Just another place to put documentation."

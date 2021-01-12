@@ -1,8 +1,9 @@
 import sys
-from typing import TypeVar
+import importlib
+from typing import TypeVar, List
 from pathlib import Path
 from collections import deque
-import importlib
+from textwrap import dedent
 
 
 T = TypeVar('T')
@@ -62,12 +63,70 @@ class DockClass:
         print('members :'.rjust(20), self.members)
 
 
+# !!!!!!!!!!!!!
+IDEA = """
+@dock(
+    desc='Short one-liner description.',
+    description='Longer multi-paragraph description with sections.'
+
+    desc='sadf',
+    description=dict(
+        section1='asdf',
+        section2='asdf'
+    )
+    usage='',
+
+    # ! Any ARGDOC not a valid arg name is treated as a section!
+    other1='',
+    other2='asdf'
+)
+"""
+
+
+# !!!!!!!!!!!!!
+OUTPUT = """
+# Module `module name`
+
+## Function `function name`
+
+> *Short description NO NEWLINES.*
+
+### Arguments
+
+- `arg1` (TypeName): *arg description*
+- `arg2` (TypeName): *arg description*
+
+Long description
+Long description
+Long description
+
+Long description
+Long description
+Long description
+
+### Usage
+
+```python
+```
+
+```python
+```
+
+### Section1
+
+asdfasdf
+asdfasdf
+
+### Section2
+
+asdfasdf
+asdfasdf
+"""
+
+
 def dock(returns: str = None, raises: str = None, **arg_or_field_docs) -> T:
     """
-    * Must be defined last so that it can put the annotation on the last func.
-
-    NOTE: This essentially does the work of introspecting the function now, so
-    that Dock doesn't have to do it when generating documentation.
+    ! Must be defined last so that it can put the annotation on the last func.
     """
 
     # Handle: @dock
@@ -77,9 +136,13 @@ def dock(returns: str = None, raises: str = None, **arg_or_field_docs) -> T:
         func_or_class = returns
 
         if isinstance(func_or_class, type):
-            func_or_class.__dock__ = {**arg_or_field_docs}
+            func_or_class.__dock__ = {'fields': arg_or_field_docs}
         else:
-            func_or_class.__dock__ = {'returns': None, 'raises': None}
+            func_or_class.__dock__ = {
+                'returns': None,
+                'raises': None,
+                'arguments': {}
+            }
 
         return func_or_class
 
@@ -93,25 +156,25 @@ def dock(returns: str = None, raises: str = None, **arg_or_field_docs) -> T:
             `arg_or_field_docs` due to the enclosing `if` statement.
             """
             if isinstance(func_or_class, type):
-                func_or_class.__dock__ = {**arg_or_field_docs}
+                func_or_class.__dock__ = {'fields': arg_or_field_docs}
 
             else:
                 func_or_class.__dock__ = {
                     'returns': returns,
                     'raises': raises,
-                    **arg_or_field_docs
+                    'arguments': arg_or_field_docs
                 }
 
             return func_or_class
 
         return inner
 
-    # TODO(pebaz): Handle bad input @dock(3)
+    # Handle bad input: dock(123)
     else:
         raise DockException()
 
 
-def introspect(obj: object, queue: deque):
+def introspect(obj: T, queue: deque):
     for attr in obj.__dict__.values():
         if hasattr(attr, '__dock__'):
             print(attr, ':', attr.__dock__)
@@ -121,7 +184,7 @@ def introspect(obj: object, queue: deque):
             introspect(attr, queue)
 
 
-def get_modules(path):
+def get_modules(path: Path) -> List[str]:
     modules = []
 
     if path.is_dir():
@@ -139,6 +202,53 @@ def get_modules(path):
     )
 
     return modules
+
+
+def generate(obj: T, file=None):
+    out = {'file': file} if file else {}
+
+    name = obj.__name__  # ! Explicitely fail if somehow not named
+    dock = obj.__dock__
+    doc = dedent(getattr(obj, '__doc__', None) or '')
+    ann = getattr(obj, '__annotations__', {})
+
+    is_class = isinstance(obj, type)
+    lines = [i.strip() for i in doc.splitlines() if i.strip()]
+    short_desc = lines[0].strip()
+    long_desc = '\n'.join(lines[1:])
+
+    print(f'## {"Class" if is_class else "Function"} {name}\n', **out)
+    # print(f'{doc}\n', **out)
+    print(f'> {short_desc}\n\n', **out)
+
+    if is_class:  # Class
+        pass
+
+    else:  # Function or method
+        arguments = dock.get('arguments', {})
+        returns = dock['returns']
+        raises = dock['raises']
+
+        signature_keys = set(ann.keys())
+        section_keys = set(arguments.keys()).intersection(signature_keys)
+
+        print('>>>', signature_keys, section_keys)
+
+        if arguments:
+            print(f'### Arguments\n', **out)
+
+            for arg_name, arg_doc in arguments.items():
+                if arg_name in section_keys:
+                    continue
+                print(f'**{arg_name}**: *{arg_doc}*\n', **out)
+
+        print(f'{long_desc}\n', **out)
+
+        if returns:
+            print(f'### Returns\n{dock["returns"]}\n', **out)
+
+        if raises:
+            print(f'### Raises\n{dock["raises"]}\n', **out)
 
 
 def cli(args):
@@ -185,10 +295,11 @@ def cli(args):
     print('-' * 80)
     print('* Docking')
 
+    foo = open('foo.md', 'w')
     while queue:
         item = queue.popleft()
-        name = getattr(item, '__name__', '') + ':'
-        print(name.rjust(15), item.__dock__, getattr(item, '__annotations__', None))
+        generate(item, foo)
+        
 
     # * cls; python dock.py test_dock.py
 

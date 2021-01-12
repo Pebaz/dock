@@ -2,4 +2,4 @@ import dock
 
 @dock
 def asdf():
-    pass
+    "Why does this exist?"

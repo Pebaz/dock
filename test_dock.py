@@ -18,6 +18,8 @@ class Foo(Parent):
 
     ```python
     print('asdf')
+    for i in range(100):
+        print(i)
     ```
     """
     X = 'y'
