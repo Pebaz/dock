@@ -66,9 +66,37 @@ def dock(returns: str = None, raises: str = None, **arg_or_field_docs) -> T:
     if callable(returns) or isinstance(returns, type):
         print('CONDITION 1')
 
+        func_or_class = returns
+
+        if isinstance(func_or_class, type):
+            func_or_class.__dock__ = {**arg_or_field_docs}
+        else:
+            func_or_class.__dock__ = {'returns': None, 'raises': None}
+
+        return func_or_class
+
     # Handle: @dock(...)
     elif isinstance(returns, str) or returns is None:
         print('CONDITION 2')
+
+        def inner(func_or_class: T) -> T:
+            """
+            Closure that has access to `returns`, `raises`, and
+            `arg_or_field_docs` due to the enclosing `if` statement.
+            """
+            if isinstance(func_or_class, type):
+                func_or_class.__dock__ = {**arg_or_field_docs}
+
+            else:
+                func_or_class.__dock__ = {
+                    'returns': returns,
+                    'raises': raises,
+                    **arg_or_field_docs
+                }
+
+            return func_or_class
+
+        return inner
 
 
 

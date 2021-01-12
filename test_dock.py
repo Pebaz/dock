@@ -35,3 +35,20 @@ class Foo(Parent):
 @dock
 class AnotherClass:
     """Can you see me?"""
+
+
+@dock(asdf='What in the world?')
+def long_name(asdf):
+    ...
+
+@dock(returns='!', raises='?', asdf='What in the world?')
+def long_name2(asdf):
+    ...
+
+@dock()
+def long_name3(asdf):
+    ...
+
+@dock
+def long_name4(asdf):
+    ...
