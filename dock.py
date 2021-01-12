@@ -181,7 +181,7 @@ def cli(args):
     while queue:
         item = queue.popleft()
         name = getattr(item, '__name__', '') + ':'
-        print(name.rjust(15), item.__dock__)
+        print(name.rjust(15), item.__dock__, getattr(item, '__annotations__', None))
 
     # * cls; python dock.py test_dock.py
 
