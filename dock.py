@@ -77,7 +77,7 @@ def dock(returns: str = None, raises: str = None, **argdocs) -> T:
     # return inner
 
     def inner(func_or_class: T) -> T:
-        print(func_or_class)
+        # ! print(func_or_class)
         if isinstance(func_or_class, type):
             func_or_class.__dock__ = {**argdocs}
         else:
@@ -172,7 +172,36 @@ def cli(args):
 
     queue = deque()  # deque is threadsafe for append & popleft. Use it
 
-    introspect_(given_path, queue)
+    def get_modules(path, modules):
+        if path.is_dir():
+            for p in path.iterdir():
+                get_modules(p, modules)
+        elif path.suffix == '.py':
+            mod = '.'.join([*path.parts][:-1] + [path.stem])
+            print(mod)
+            modules.append(mod)
+                
+
+    print('*')
+    modules = []
+    get_modules(given_path, modules)
+    modules.sort(key=lambda x: x.count('.') if '__init__' not in x else x.count('.') - 0.1)
+    print('*')
+
+    # ! THIS IS VITALLY IMPORTANT:
+    import sys; sys.path.insert(0, str(Path().resolve()))
+
+    for p in modules:
+        print(1, p)
+        try:
+            mod = importlib.import_module(p if '.__init__' not in p else p.replace('.__init__', ''))
+            sys.modules[p] = mod
+            # print(dir(mod))
+        except Exception as e:
+            print('WARNING: Failed to import', p, ':', e)
+        print(2)
+    print('*')
+
 
     # if given_path.is_dir():
     #     package = importlib.import_module(given_path.stem)
