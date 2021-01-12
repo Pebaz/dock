@@ -188,7 +188,7 @@ def cli(args):
     modules.sort(key=lambda x: x.count('.') if '__init__' not in x else x.count('.') - 0.1)
     print('*')
 
-    # ! THIS IS VITALLY IMPORTANT:
+    # ! THIS IS VITALLY IMPORTANT (prevents site-packages preferal)
     import sys; sys.path.insert(0, str(Path().resolve()))
 
     for p in modules:
