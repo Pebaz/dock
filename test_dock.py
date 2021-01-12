@@ -52,3 +52,6 @@ def long_name3(asdf):
 @dock
 def long_name4(asdf):
     ...
+
+dock(3)
+dock()

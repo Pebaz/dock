@@ -98,40 +98,10 @@ def dock(returns: str = None, raises: str = None, **arg_or_field_docs) -> T:
 
         return inner
 
-
-
-
-    print('__dock__:', type(returns), callable(returns), isinstance(returns, type), returns)
-
-    # TODO(pebaz): Handle class input @dock(class)
     # TODO(pebaz): Handle bad input @dock(3)
-
-    # TODO(pebaz): @dock, @dock(), and @dock(...) should work.
-
-    # def inner(func_or_class: T) -> T:
-    #     if isinstance(func_or_class, type):
-    #         func_or_class.__dock__ = DockClass(func_or_class)
-    #     else:
-    #         func_or_class.__dock__ = DockFunction(func_or_class)
-    #     return func_or_class
-    # return inner
-
-    def inner(func_or_class: T) -> T:
-        # ! print(func_or_class)
-        if isinstance(func_or_class, type):
-            func_or_class.__dock__ = {**arg_or_field_docs}
-        else:
-            func_or_class.__dock__ = {
-                # Don't need to annotation with type (class/func) since we have a direct reference
-                'returns': returns,
-                'raises': raises,
-                **arg_or_field_docs
-            }
-        return func_or_class
-
-    if isinstance(returns, type) or callable(returns):
-        return inner(returns)
-    return inner
+    else:
+        ...
+        print('!!!!!!!!')
 
 
 def introspect(obj: object, queue: deque):
