@@ -250,21 +250,28 @@ def group(obj: T, file=None, table=None, namespace={}):
     name = obj.__name__  # ! Explicitly fail if somehow not named
     full_name = getattr(obj, '__qualname__', '').replace('<locals>.', '')
 
+
+
+
+    MODULE = getattr(obj, '__module__', getattr(obj, '__package__', None))
+
+
+
     if isinstance(obj, ModuleType) and name.endswith('__init__'):  # Package
-        table.add('PACKAGE', name, '->', full_name)
+        table.add('PACKAGE', name, '->', full_name, MODULE)
         namespace.setdefault(name.replace('.__init__', ''), {})
         return
 
     elif isinstance(obj, ModuleType):  # Module
-        table.add('MODULE', name, '->', full_name)
+        table.add('MODULE', name, '->', full_name, MODULE)
         namespace.setdefault(name.replace('.__init__', ''), {})
         return
     
     elif isinstance(obj, type):  # Class
-        table.add('CLASS', name, '->', full_name)
+        table.add('CLASS', name, '->', full_name, MODULE)
 
     elif callable(obj):  # Method or Function
-        table.add('FUNCTION', name, '->', full_name)
+        table.add('FUNCTION', name, '->', full_name, MODULE)
     
     next_ = namespace
     for name in full_name.split('.'):
