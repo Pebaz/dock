@@ -178,14 +178,6 @@ def dock(returns: str = None, raises: str = None, **arg_or_field_docs) -> T:
     if callable(returns) or isinstance(returns, type):
         func_or_class = returns
 
-        func_or_class.__dock_name__ = getattr(
-            func_or_class,
-            '__qualname__',
-            func_or_class.__name__
-        )
-
-        print('--->', func_or_class.__dock_name__)
-
         if isinstance(func_or_class, type):
             func_or_class.__dock__ = {'fields': arg_or_field_docs}
         else:
@@ -204,15 +196,6 @@ def dock(returns: str = None, raises: str = None, **arg_or_field_docs) -> T:
             Closure that has access to `returns`, `raises`, and
             `arg_or_field_docs` due to the enclosing `if` statement.
             """
-
-            func_or_class.__dock_name__ = getattr(
-                func_or_class,
-                '__qualname__',
-                func_or_class.__name__
-            )
-
-            print('--->', func_or_class.__dock_name__)
-
             if isinstance(func_or_class, type):
                 func_or_class.__dock__ = {'fields': arg_or_field_docs}
 
@@ -269,23 +252,23 @@ def group(obj: T, file=None, table=None, namespace={}):
 
     if isinstance(obj, ModuleType) and name.endswith('__init__'):  # Package
         table.add('PACKAGE', name, '->', full_name)
+        namespace.setdefault(name.replace('.__init__', ''), {})
+        return
 
     elif isinstance(obj, ModuleType):  # Module
         table.add('MODULE', name, '->', full_name)
+        namespace.setdefault(name.replace('.__init__', ''), {})
+        return
     
     elif isinstance(obj, type):  # Class
         table.add('CLASS', name, '->', full_name)
 
     elif callable(obj):  # Method or Function
         table.add('FUNCTION', name, '->', full_name)
-
-    if not full_name:  # Create module namespace
-        return namespace.setdefault(name, {})
     
-    else:
-        next_ = namespace
-        for name in full_name.split('.'):
-            next_ = next_.setdefault(name, {})
+    next_ = namespace
+    for name in full_name.split('.'):
+        next_ = next_.setdefault(name, {})
 
 
     # dock = obj.__dock__
@@ -383,7 +366,10 @@ def cli(args):
     table = Table()
     while queue:
         item = queue.popleft()
-        ptr = group(item, foo, table, ptr) or ptr
+
+        # TODO(pebaz): Implement push/pop namespaces for packages/modules
+        group(item, foo, table, ptr)
+
     table.show()
 
     print()
