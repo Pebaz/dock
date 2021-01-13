@@ -97,3 +97,11 @@ $ dock package --out some-file.md  # Generate Markdown page
 $ dock module.py --show  # Generate temp docs and open in system web browser
 $ dock package --show
 ```
+
+## Notes
+
+Dock doesn't work well with nested functions because function bodies are not
+evaluated until they are called. What this means is that if you want to docment
+a nested function, Dock won't be able to generate docs for it since it can only
+see the objects that are within the module's global scope or can be introspected
+off of a given class.

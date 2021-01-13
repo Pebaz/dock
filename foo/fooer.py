@@ -19,6 +19,16 @@ class ClassOne:
     You can [click this](http://www.google.com)
     """
 
+    @dock
+    def look(self):
+        "Something looking"
+
+    @dock
+    class InnerOne:
+        @dock
+        def look_innerone(self):
+            ...
+
 @dock(raises='Something that you don\'t want to happen')
 def bar():
     "A function that does something that could work if it didn't."

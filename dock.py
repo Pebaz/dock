@@ -1,6 +1,7 @@
 import sys
 import importlib
-from typing import TypeVar, List
+from types import ModuleType
+from typing import TypeVar, Optional, List
 from pathlib import Path
 from collections import deque
 from textwrap import dedent
@@ -204,51 +205,79 @@ def get_modules(path: Path) -> List[str]:
     return modules
 
 
-def generate(obj: T, file=None):
+def generate(obj: T, prev: Optional[T] = None, file=None):
     out = {'file': file} if file else {}
-
     name = obj.__name__  # ! Explicitely fail if somehow not named
-    dock = obj.__dock__
-    doc = dedent(getattr(obj, '__doc__', None) or '')
-    ann = getattr(obj, '__annotations__', {})
+    full_name = getattr(obj, '__qualname__', '').replace('<locals>.', '')
 
-    is_class = isinstance(obj, type)
-    lines = [i.strip() for i in doc.splitlines() if i.strip()]
-    short_desc = lines[0].strip()
-    long_desc = '\n'.join(lines[1:])
+    if isinstance(obj, ModuleType) and name.endswith('__init__'):  # Package
+        print('PACKAGE'.ljust(20), name.ljust(20), '->',full_name)
 
-    print(f'## {"Class" if is_class else "Function"} {name}\n', **out)
-    # print(f'{doc}\n', **out)
-    print(f'> {short_desc}\n\n', **out)
+    elif isinstance(obj, ModuleType):  # Module
+        print('MODULE'.ljust(20), name.ljust(20), '->',full_name)
+    
+    elif isinstance(obj, type):  # Class
+        print('CLASS'.ljust(20), name.ljust(20), '->',full_name)
 
-    if is_class:  # Class
-        pass
+    elif callable(obj):  # Method or Function
+        # import ipdb; ipdb.set_trace()
 
-    else:  # Function or method
-        arguments = dock.get('arguments', {})
-        returns = dock['returns']
-        raises = dock['raises']
+        # prev_name = prev.__name__ if prev else __file__
 
-        signature_keys = set(ann.keys())
-        section_keys = set(arguments.keys()).intersection(signature_keys)
+        prev_name = getattr(
+            prev,
+            '__qualname__',
+            prev.__name__ if prev else __file__
+        )
 
-        print('>>>', signature_keys, section_keys)
+        if full_name.startswith(prev_name):  # Method
+            print('METHOD'.ljust(20), name.ljust(20), '->',full_name)
 
-        if arguments:
-            print(f'### Arguments\n', **out)
+        else:  # Function
+            print('FUNCTION'.ljust(20), name.ljust(20), '->',full_name)
 
-            for arg_name, arg_doc in arguments.items():
-                if arg_name in section_keys:
-                    continue
-                print(f'**{arg_name}**: *{arg_doc}*\n', **out)
 
-        print(f'{long_desc}\n', **out)
+    # dock = obj.__dock__
+    # doc = dedent(getattr(obj, '__doc__', None) or '')
+    # ann = getattr(obj, '__annotations__', {})
 
-        if returns:
-            print(f'### Returns\n{dock["returns"]}\n', **out)
+    # is_class = isinstance(obj, type)
+    # lines = [i.strip() for i in doc.splitlines() if i.strip()]
+    # short_desc = lines[0].strip()
+    # long_desc = '\n'.join(lines[1:])
 
-        if raises:
-            print(f'### Raises\n{dock["raises"]}\n', **out)
+    # print(f'## {"Class" if is_class else "Function"} {name}\n', **out)
+    # # print(f'{doc}\n', **out)
+    # print(f'> {short_desc}\n\n', **out)
+
+    # if is_class:  # Class
+    #     pass
+
+    # else:  # Function or method
+    #     arguments = dock.get('arguments', {})
+    #     returns = dock['returns']
+    #     raises = dock['raises']
+
+    #     signature_keys = set(ann.keys())
+    #     section_keys = set(arguments.keys()).intersection(signature_keys)
+
+    #     print('>>>', signature_keys, section_keys)
+
+    #     if arguments:
+    #         print(f'### Arguments\n', **out)
+
+    #         for arg_name, arg_doc in arguments.items():
+    #             if arg_name in section_keys:
+    #                 continue
+    #             print(f'**{arg_name}**: *{arg_doc}*\n', **out)
+
+    #     print(f'{long_desc}\n', **out)
+
+    #     if returns:
+    #         print(f'### Returns\n{dock["returns"]}\n', **out)
+
+    #     if raises:
+    #         print(f'### Raises\n{dock["raises"]}\n', **out)
 
 
 def cli(args):
@@ -285,6 +314,8 @@ def cli(args):
             # Allows other modules to import this module
             sys.modules[module] = mod
 
+            queue.append(mod)  # Preserve output order
+
             introspect(mod, queue)  # Scrape out all __dock__ed members
         except Exception as e:
             print('WARNING: Failed to import', module, ':', e)
@@ -296,9 +327,11 @@ def cli(args):
     print('* Docking')
 
     foo = open('foo.md', 'w')
+    prev = None
     while queue:
         item = queue.popleft()
-        generate(item, foo)
+        generate(item, prev, foo)
+        prev = item
         
 
     # * cls; python dock.py test_dock.py
