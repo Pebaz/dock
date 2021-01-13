@@ -262,9 +262,9 @@ def get_modules(path: Path) -> List[str]:
     return modules
 
 
-def generate(obj: T, prev: Optional[T] = None, file=None, table=None):
+def group(obj: T, file=None, table=None, namespace={}):
     out = {'file': file} if file else {}
-    name = obj.__name__  # ! Explicitely fail if somehow not named
+    name = obj.__name__  # ! Explicitly fail if somehow not named
     full_name = getattr(obj, '__qualname__', '').replace('<locals>.', '')
 
     if isinstance(obj, ModuleType) and name.endswith('__init__'):  # Package
@@ -277,21 +277,15 @@ def generate(obj: T, prev: Optional[T] = None, file=None, table=None):
         table.add('CLASS', name, '->', full_name)
 
     elif callable(obj):  # Method or Function
-        # import ipdb; ipdb.set_trace()
+        table.add('FUNCTION', name, '->', full_name)
 
-        # prev_name = prev.__name__ if prev else __file__
-
-        prev_name = getattr(
-            prev,
-            '__qualname__',
-            prev.__name__ if prev else __file__
-        )
-
-        if full_name.startswith(prev_name):  # Method
-            table.add('METHOD', name, '->', full_name)
-
-        else:  # Function
-            table.add('FUNCTION', name, '->', full_name)
+    if not full_name:  # Create module namespace
+        return namespace.setdefault(name, {})
+    
+    else:
+        next_ = namespace
+        for name in full_name.split('.'):
+            next_ = next_.setdefault(name, {})
 
 
     # dock = obj.__dock__
@@ -383,14 +377,20 @@ def cli(args):
     print('-' * 80)
     print('* Docking')
 
+    namespace = {}
+    ptr = namespace
     foo = open('foo.md', 'w')
-    prev = None
     table = Table()
     while queue:
         item = queue.popleft()
-        generate(item, prev, foo, table)
-        prev = item
+        ptr = group(item, foo, table, ptr) or ptr
     table.show()
+
+    print()
+    print('-' * 80)
+    print('* Namespacing')
+    import json
+    print(json.dumps(namespace, indent=4))
 
     # * cls; python dock.py test_dock.py
 
