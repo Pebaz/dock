@@ -125,6 +125,50 @@ asdfasdf
 """
 
 
+class Table:
+    def __init__(self, margin=1, sep='|', align='center'):
+        assert align in {'center', 'ljust', 'rjust'}
+        self.margin = margin
+        self.sep = sep
+        self.align = align
+        self.rows = []
+        self.col_lens = []
+    
+    def add(self, *cells):
+        row = [str(i) for i in cells]
+
+        if not self.rows:
+            self.col_lens = [len(i) for i in row]
+
+        self.rows.append(row)
+
+        for i in range(max(len(self.col_lens), len(row))):
+            if i >= len(row):
+                break
+            new_col_len = len(row[i])
+
+            if i >= len(self.col_lens):
+                self.col_lens.append(new_col_len)
+            col_len = self.col_lens[i]
+
+            if new_col_len > col_len:
+                self.col_lens[i] = new_col_len
+    
+    def show(self):
+        start = f'{self.sep}{" " * self.margin}'
+        separator = f'{" " * self.margin}{start}'
+
+        for row in self.rows:
+            print(start, end='')
+            for i, cell in enumerate(row):
+                if i >= len(self.col_lens):
+                    break
+                col_len = self.col_lens[i]
+                line = getattr(str(cell), self.align)(col_len)
+                print(line, end=separator)
+            print()
+
+
 def dock(returns: str = None, raises: str = None, **arg_or_field_docs) -> T:
     """
     ! Must be defined last so that it can put the annotation on the last func.
@@ -132,9 +176,15 @@ def dock(returns: str = None, raises: str = None, **arg_or_field_docs) -> T:
 
     # Handle: @dock
     if callable(returns) or isinstance(returns, type):
-        print('CONDITION 1')
-
         func_or_class = returns
+
+        func_or_class.__dock_name__ = getattr(
+            func_or_class,
+            '__qualname__',
+            func_or_class.__name__
+        )
+
+        print('--->', func_or_class.__dock_name__)
 
         if isinstance(func_or_class, type):
             func_or_class.__dock__ = {'fields': arg_or_field_docs}
@@ -149,13 +199,20 @@ def dock(returns: str = None, raises: str = None, **arg_or_field_docs) -> T:
 
     # Handle: @dock(...)
     elif isinstance(returns, str) or returns is None:
-        print('CONDITION 2')
-
         def inner(func_or_class: T) -> T:
             """
             Closure that has access to `returns`, `raises`, and
             `arg_or_field_docs` due to the enclosing `if` statement.
             """
+
+            func_or_class.__dock_name__ = getattr(
+                func_or_class,
+                '__qualname__',
+                func_or_class.__name__
+            )
+
+            print('--->', func_or_class.__dock_name__)
+
             if isinstance(func_or_class, type):
                 func_or_class.__dock__ = {'fields': arg_or_field_docs}
 
@@ -205,19 +262,19 @@ def get_modules(path: Path) -> List[str]:
     return modules
 
 
-def generate(obj: T, prev: Optional[T] = None, file=None):
+def generate(obj: T, prev: Optional[T] = None, file=None, table=None):
     out = {'file': file} if file else {}
     name = obj.__name__  # ! Explicitely fail if somehow not named
     full_name = getattr(obj, '__qualname__', '').replace('<locals>.', '')
 
     if isinstance(obj, ModuleType) and name.endswith('__init__'):  # Package
-        print('PACKAGE'.ljust(20), name.ljust(20), '->',full_name)
+        table.add('PACKAGE', name, '->', full_name)
 
     elif isinstance(obj, ModuleType):  # Module
-        print('MODULE'.ljust(20), name.ljust(20), '->',full_name)
+        table.add('MODULE', name, '->', full_name)
     
     elif isinstance(obj, type):  # Class
-        print('CLASS'.ljust(20), name.ljust(20), '->',full_name)
+        table.add('CLASS', name, '->', full_name)
 
     elif callable(obj):  # Method or Function
         # import ipdb; ipdb.set_trace()
@@ -231,10 +288,10 @@ def generate(obj: T, prev: Optional[T] = None, file=None):
         )
 
         if full_name.startswith(prev_name):  # Method
-            print('METHOD'.ljust(20), name.ljust(20), '->',full_name)
+            table.add('METHOD', name, '->', full_name)
 
         else:  # Function
-            print('FUNCTION'.ljust(20), name.ljust(20), '->',full_name)
+            table.add('FUNCTION', name, '->', full_name)
 
 
     # dock = obj.__dock__
@@ -328,11 +385,12 @@ def cli(args):
 
     foo = open('foo.md', 'w')
     prev = None
+    table = Table()
     while queue:
         item = queue.popleft()
-        generate(item, prev, foo)
+        generate(item, prev, foo, table)
         prev = item
-        
+    table.show()
 
     # * cls; python dock.py test_dock.py
 
