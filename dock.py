@@ -282,33 +282,37 @@ def group(obj: T, root, table):
 
     if isinstance(obj, ModuleType) and name.endswith('__init__'):  # Package
         table.add('PACKAGE', fully_qualified_name)
-        namespace.new(first_name, obj, 'PACKAGE')
+        # namespace.new(first_name, obj, 'PACKAGE')
+        namespace.new(Package(first_name, obj))
 
     elif isinstance(obj, ModuleType):  # Module
         table.add('MODULE', fully_qualified_name)
-        namespace.new(first_name, obj, 'MODULE')
+        # namespace.new(first_name, obj, 'MODULE')
+        namespace.new(Module(first_name, obj))
     
     elif isinstance(obj, type):  # Class
         table.add('CLASS', fully_qualified_name)
-        namespace.new(first_name, obj, 'CLASS')
+        # namespace.new(first_name, obj, 'CLASS')
+        namespace.new(Class(first_name, obj))
 
+    # * Not making a distinction here between methods/functions since this can
+    # * get extremely mirky when sorting them out. No meaning is lost anyway.
     elif callable(obj):  # Function
         table.add('FUNCTION', fully_qualified_name)
         namespace.add(first_name, obj)
 
 
 class Namespace:
-    def __init__(self, name, obj, type_):
+    def __init__(self, name, obj):
         self.name = name
         self.namespace = {}
         self.ref = obj
-        self.type = type_
 
     def __str__(self):
-        return f'<{self.name}>'
+        return f'<NAMESPACE {self.name}>'
 
-    def new(self, name, obj, type_):
-        self.namespace[name] = Namespace(name, obj, type_)
+    def new(self, namespace):
+        self.namespace[namespace.name] = namespace
     
     def add(self, name, obj):
         self.namespace[name] = obj
@@ -325,9 +329,64 @@ class Namespace:
                 result[name] = str(value)
         return result
 
+    def get_funcs(self):
+        return [
+            *filter(
+                lambda item: not isinstance(item, Namespace),
+                self.namespace.values()
+            )
+        ]
+
+    def get_namespaces(self):
+        return [
+            *filter(
+                lambda item: isinstance(item, Namespace),
+                self.namespace.values()
+            )
+        ]
+
+class Package(Namespace):
+    def __str__(self):
+        return f'<PACKAGE {self.name}>'
+
+
+class Module(Namespace):
+    def __str__(self):
+        return f'<MODULE {self.name}>'
+
+
+class Class(Namespace):
+    def __str__(self):
+        return f'<CLASS {self.name}>'
+
 
 def generate(namespace, file=None):
     out = {'file': file} if file else {}
+    queue = deque()
+
+    names = []
+    funcs = []
+
+    for item in namespace.namespace.values():
+        if isinstance(item, Namespace):
+            names.append(item)
+        else:
+            funcs.append(item)
+
+    queue.extend(funcs)
+    queue.extend(names)
+    
+    while queue:
+        item = queue.popleft()
+
+        if isinstance(item, Namespace):
+            print(f'## {item.__class__.__name__} {get_absolute_name(item.ref)}')
+
+            queue.extend(item.get_funcs())
+            queue.extend(item.get_namespaces())
+
+        else:
+            print(f'### Function {get_absolute_name(item)}')
 
 
 def cli(args):
@@ -379,7 +438,7 @@ def cli(args):
     print('-' * 80)
     print('* Docking')
 
-    root = Namespace('root', None, 'ROOT')
+    root = Namespace('root', None)
     table = Table()
 
     while queue:
