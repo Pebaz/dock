@@ -1,3 +1,9 @@
+"""
+*Module-level docstring.*
+
+It can be multi-line, and contain copyright notices, etc.
+"""
+
 import dock
 
 @dock

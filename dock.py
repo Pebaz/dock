@@ -97,6 +97,7 @@ OUTPUT = """
 
 - `arg1` (TypeName): *arg description*
 - `arg2` (TypeName): *arg description*
+- `arg3` -> `pack.mod.Class1`: *arg description*
 
 Long description
 Long description
@@ -359,6 +360,12 @@ class Package(Namespace):
     def header(self):
         return f'# Package `{get_absolute_name(self.ref)}`'
 
+    def generate(self, out):
+        print(self.header(), '\n', **out)
+
+        # Long description
+        if self.ref.__doc__:
+            print(dedent(self.ref.__doc__), **out)
 
 class Module(Namespace):
     def __str__(self):
@@ -366,6 +373,13 @@ class Module(Namespace):
 
     def header(self):
         return f'## Module `{get_absolute_name(self.ref)}`'
+
+    def generate(self, out):
+        print(self.header(), '\n', **out)
+
+        # Long description
+        if self.ref.__doc__:
+            print(dedent(self.ref.__doc__), **out)
 
 
 class Class(Namespace):
@@ -377,6 +391,10 @@ class Class(Namespace):
     
     def generate(self, out):
         print(self.header(), **out)
+
+        # Long description
+        if self.ref.__doc__:
+            print(dedent(self.ref.__doc__), **out)
 
         # TODO(pebaz): Print out class heirarchy
 
@@ -393,18 +411,26 @@ class Function:
         return f'#### Function `{get_absolute_name(self.ref)}`'
 
     def generate(self, out):
-        print(self.header(), **out)
+        print(self.header(), '\n', **out)
 
         # ! FIX THIS: AUTOMATICALLY FIGURE OUT WHICH ONES ARE ARGUMENTS
+        # Short description
         if self.ref.__dock__['arguments'].get('short'):
-            print(f'> {self.ref.__dock__["arguments"]["short"]}', **out)
+            print(f'> {self.ref.__dock__["arguments"]["short"]}\n', **out)
 
+        # Argument Types
+        print('**Arguments**\n', **out)
+        # - `arg3` -> `pack.mod.Class1`: *arg description*
+
+        # Return Type
+
+        # Long description
         if self.ref.__doc__:
             print(dedent(self.ref.__doc__), **out)
-        
+
+        # Source code
         print('<details><summary>Source</summary>', **out)
         print('\n```python', **out)
-        
         print(dedent(inspect.getsource(self.ref)), **out)
         print('```\n', **out)
         print('</details>\n', **out)
