@@ -251,8 +251,7 @@ def get_modules(path: Path) -> List[str]:
     return modules
 
 
-def group(obj: T, file=None, table=None, namespace={}):
-    out = {'file': file} if file else {}
+def group(obj: T, root, table):
     name = obj.__name__  # ! Explicitly fail if somehow not named
     full_name = getattr(obj, '__qualname__', '').replace('<locals>.', '')
 
@@ -263,20 +262,63 @@ def group(obj: T, file=None, table=None, namespace={}):
 
     else:  # Methods or Functions
         fully_qualified_name = f'{MODULE}.{full_name}'
+    
+    namespace_parts = fully_qualified_name.split('.')
+    first_name = namespace_parts.pop(-1)
+    namespace = root
+
+    for each_name in namespace_parts:
+        namespace = namespace.get(each_name)
+
+    # print('->', fully_qualified_name, namespace)
 
     if isinstance(obj, ModuleType) and name.endswith('__init__'):  # Package
         table.add('PACKAGE', fully_qualified_name)
-        return
+        namespace.new(first_name, obj)
 
     elif isinstance(obj, ModuleType):  # Module
         table.add('MODULE', fully_qualified_name)
-        return
+        namespace.new(first_name, obj)
     
     elif isinstance(obj, type):  # Class
         table.add('CLASS', fully_qualified_name)
+        namespace.new(first_name, obj)
 
     elif callable(obj):  # Method or Function
         table.add('FUNCTION', fully_qualified_name)
+        namespace.add(first_name, obj)
+
+
+class Namespace:
+    def __init__(self, name, obj):
+        self.name = name
+        self.namespace = {}
+        self.ref = obj
+
+    def __str__(self):
+        return f'<{self.name}>'
+
+    def new(self, name, obj):
+        self.namespace[name] = Namespace(name, obj)
+    
+    def add(self, name, obj):
+        self.namespace[name] = obj
+    
+    def get(self, name):
+        return self.namespace[name]
+    
+    def as_dict(self):
+        result = {'__dock_self__': str(self.ref)}
+        for name, value in self.namespace.items():
+            if isinstance(value, Namespace):
+                result[name] = value.as_dict()
+            else:
+                result[name] = str(value)
+        return result
+
+
+def generate(namespace, file=None):
+    out = {'file': file} if file else {}
 
 
 def cli(args):
@@ -296,16 +338,19 @@ def cli(args):
 
     queue = deque()  # deque is threadsafe for append & popleft. Use it
 
+    print()
+    print('-' * 80)
     print('* Modules')
     modules = get_modules(given_path)
 
     for m in modules:
         print(m)
 
-    print('*\n')
-
+    print()
+    print('-' * 80)
     print('* Introspecting')
 
+    # TODO(pebaz): Extract into function
     for module in modules:
         try:
             mod = importlib.import_module(module)
@@ -325,15 +370,13 @@ def cli(args):
     print('-' * 80)
     print('* Docking')
 
-    namespace = {}
-    ptr = namespace
-    foo = open('foo.md', 'w')
+    root = Namespace('root', None)
+    # foo = open('foo.md', 'w')
     table = Table()
+
     while queue:
         item = queue.popleft()
-
-        # TODO(pebaz): Implement push/pop namespaces for packages/modules
-        group(item, foo, table, ptr)
+        group(item, root, table)
 
     table.show()
 
@@ -341,7 +384,7 @@ def cli(args):
     print('-' * 80)
     print('* Namespacing')
     import json
-    print(json.dumps(namespace, indent=4))
+    print(json.dumps(root.as_dict(), indent=4))
 
     # * cls; python dock.py test_dock.py
 
