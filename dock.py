@@ -221,6 +221,14 @@ def dock(returns: str = None, raises: str = None, **arg_or_field_docs) -> T:
         raise DockException()
 
 
+
+# TODO(pebaz): help(some_dock_func) needs to work with the extra doc fields
+def dock_help(obj: T):
+    pass
+dock.help = dock_help
+
+
+
 def introspect(obj: T, queue: deque):
     for attr in obj.__dict__.values():
         if hasattr(attr, '__dock__'):
@@ -282,17 +290,14 @@ def group(obj: T, root, table):
 
     if isinstance(obj, ModuleType) and name.endswith('__init__'):  # Package
         table.add('PACKAGE', fully_qualified_name)
-        # namespace.new(first_name, obj, 'PACKAGE')
         namespace.new(Package(first_name, obj))
 
     elif isinstance(obj, ModuleType):  # Module
         table.add('MODULE', fully_qualified_name)
-        # namespace.new(first_name, obj, 'MODULE')
         namespace.new(Module(first_name, obj))
     
     elif isinstance(obj, type):  # Class
         table.add('CLASS', fully_qualified_name)
-        # namespace.new(first_name, obj, 'CLASS')
         namespace.new(Class(first_name, obj))
 
     # * Not making a distinction here between methods/functions since this can
@@ -344,49 +349,55 @@ class Namespace:
                 self.namespace.values()
             )
         ]
+        
+    def generate(self, out):
+        print(self.header(), **out)
 
 class Package(Namespace):
     def __str__(self):
         return f'<PACKAGE {self.name}>'
+    
+    def header(self):
+        return f'# Package `{get_absolute_name(self.ref)}`'
 
 
 class Module(Namespace):
     def __str__(self):
         return f'<MODULE {self.name}>'
 
+    def header(self):
+        return f'## Module `{get_absolute_name(self.ref)}`'
+
 
 class Class(Namespace):
     def __str__(self):
         return f'<CLASS {self.name}>'
 
+    def header(self):
+        return f'### Class `{get_absolute_name(self.ref)}`'
+    
+    def generate1(self):
+        print(self.header())
+
+        for func in self.get_funcs():
+            # TODO(pebaz): func.generate()
+            print(f'### Function `{get_absolute_name(item)}`', **out)
+
+        for namespace in self.get_namespaces():
+            namespace.generate()
+
+    
+
 
 def generate(namespace, file=None):
     out = {'file': file} if file else {}
-    queue = deque()
 
-    names = []
-    funcs = []
+    for func in namespace.get_funcs():
+        print(f'#### Function `{get_absolute_name(func)}`', **out)
 
-    for item in namespace.namespace.values():
-        if isinstance(item, Namespace):
-            names.append(item)
-        else:
-            funcs.append(item)
-
-    queue.extend(funcs)
-    queue.extend(names)
-    
-    while queue:
-        item = queue.popleft()
-
-        if isinstance(item, Namespace):
-            print(f'## {item.__class__.__name__} {get_absolute_name(item.ref)}')
-
-            queue.extend(item.get_funcs())
-            queue.extend(item.get_namespaces())
-
-        else:
-            print(f'### Function {get_absolute_name(item)}')
+    for item in namespace.get_namespaces():
+        item.generate(out)
+        generate(item, file)
 
 
 def cli(args):
@@ -451,7 +462,7 @@ def cli(args):
     print('-' * 80)
     print('* Namespacing')
     import json
-    #print(json.dumps(root.as_dict(), indent=4))
+    print(json.dumps(root.as_dict(), indent=4))
 
     print()
     print('-' * 80)
