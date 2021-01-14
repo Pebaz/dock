@@ -251,7 +251,9 @@ def get_modules(path: Path) -> List[str]:
     return modules
 
 
-def group(obj: T, root, table):
+def get_absolute_name(obj: T) -> str:
+    "Used to create interlinks"
+
     name = obj.__name__  # ! Explicitly fail if somehow not named
     full_name = getattr(obj, '__qualname__', '').replace('<locals>.', '')
 
@@ -263,14 +265,18 @@ def group(obj: T, root, table):
     else:  # Methods or Functions
         fully_qualified_name = f'{MODULE}.{full_name}'
     
+    return fully_qualified_name
+
+
+def group(obj: T, root, table):
+    name = obj.__name__
+    fully_qualified_name = get_absolute_name(obj)
     namespace_parts = fully_qualified_name.split('.')
     first_name = namespace_parts.pop(-1)
-    namespace = root
 
+    namespace = root
     for each_name in namespace_parts:
         namespace = namespace.get(each_name)
-
-    # print('->', fully_qualified_name, namespace)
 
     if isinstance(obj, ModuleType) and name.endswith('__init__'):  # Package
         table.add('PACKAGE', fully_qualified_name)
@@ -319,6 +325,8 @@ class Namespace:
 
 def generate(namespace, file=None):
     out = {'file': file} if file else {}
+
+
 
 
 def cli(args):
