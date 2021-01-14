@@ -393,6 +393,13 @@ class Function:
     def generate(self, out):
         print(self.header(), **out)
 
+        # ! FIX THIS: AUTOMATICALLY FIGURE OUT WHICH ONES ARE ARGUMENTS
+        if self.ref.__dock__['arguments'].get('short'):
+            print(f'> {self.ref.__dock__["arguments"]["short"]}', **out)
+
+        if self.ref.__doc__:
+            print(dedent(self.ref.__doc__), **out)
+
 
 def generate_namespace(namespace, file=None):
     out = {'file': file} if file else {}
