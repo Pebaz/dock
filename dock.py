@@ -1,5 +1,6 @@
 import sys
 import importlib
+import inspect
 from types import ModuleType
 from typing import TypeVar, Optional, List
 from pathlib import Path
@@ -304,7 +305,6 @@ def group(obj: T, root, table):
     # * get extremely mirky when sorting them out. No meaning is lost anyway.
     elif callable(obj):  # Function
         table.add('FUNCTION', fully_qualified_name)
-        # ? namespace.add(first_name, obj)
         namespace.new(Function(first_name, obj))
 
 
@@ -319,9 +319,6 @@ class Namespace:
 
     def new(self, namespace):
         self.namespace[namespace.name] = namespace
-    
-    # ? def add(self, name, obj):
-    # ?     self.namespace[name] = obj
     
     def get(self, name):
         return self.namespace[name]
@@ -377,6 +374,11 @@ class Class(Namespace):
 
     def header(self):
         return f'### Class `{get_absolute_name(self.ref)}`'
+    
+    def generate(self, out):
+        print(self.header(), **out)
+
+        # TODO(pebaz): Print out class heirarchy
 
 
 class Function:
@@ -399,6 +401,13 @@ class Function:
 
         if self.ref.__doc__:
             print(dedent(self.ref.__doc__), **out)
+        
+        print('<details><summary>Source</summary>', **out)
+        print('\n```python', **out)
+        
+        print(dedent(inspect.getsource(self.ref)), **out)
+        print('```\n', **out)
+        print('</details>\n', **out)
 
 
 def generate_namespace(namespace, file=None):
