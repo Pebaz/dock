@@ -260,12 +260,12 @@ def get_absolute_name(obj: T) -> str:
     MODULE = getattr(obj, '__module__', getattr(obj, '__package__', name))
 
     if not full_name:  # Module or Package
-        fully_qualified_name = f'{name.replace(".__init__", "")}'
+        absolute_name = f'{name.replace(".__init__", "")}'
 
     else:  # Methods or Functions
-        fully_qualified_name = f'{MODULE}.{full_name}'
+        absolute_name = f'{MODULE.replace(".__init__", "")}.{full_name}'
     
-    return fully_qualified_name
+    return absolute_name
 
 
 def group(obj: T, root, table):
@@ -274,8 +274,11 @@ def group(obj: T, root, table):
     namespace_parts = fully_qualified_name.split('.')
     first_name = namespace_parts.pop(-1)
 
+    print(fully_qualified_name)
+
     namespace = root
     for each_name in namespace_parts:
+        print('->', each_name)
         namespace = namespace.get(each_name)
 
     if isinstance(obj, ModuleType) and name.endswith('__init__'):  # Package
