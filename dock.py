@@ -278,30 +278,23 @@ def group(obj: T, root, table):
 
     namespace = root
     for each_name in namespace_parts:
-        print('->', each_name)
         namespace = namespace.get(each_name)
 
     if isinstance(obj, ModuleType) and name.endswith('__init__'):  # Package
         table.add('PACKAGE', fully_qualified_name)
         namespace.new(first_name, obj, 'PACKAGE')
-        return 'PACKAGE'
 
     elif isinstance(obj, ModuleType):  # Module
         table.add('MODULE', fully_qualified_name)
         namespace.new(first_name, obj, 'MODULE')
-        return 'MODULE'
     
     elif isinstance(obj, type):  # Class
         table.add('CLASS', fully_qualified_name)
         namespace.new(first_name, obj, 'CLASS')
-        return 'CLASS'
 
-    elif callable(obj):  # Method or Function
+    elif callable(obj):  # Function
         table.add('FUNCTION', fully_qualified_name)
         namespace.add(first_name, obj)
-        return 'FUNCTION'
-    
-
 
 
 class Namespace:
@@ -333,18 +326,8 @@ class Namespace:
         return result
 
 
-def generate(namespace, types, file=None):
+def generate(namespace, file=None):
     out = {'file': file} if file else {}
-
-    for type_ in types:
-        # if type_ == 'PACKAGE':
-        #     continue
-        print(f'#### {type_.capitalize()}s', **out)
-        for value in types[type_]:
-            print('-', get_absolute_name(value), **out)
-            print(**out)
-        print(**out)
-
 
 
 def cli(args):
@@ -398,12 +381,10 @@ def cli(args):
 
     root = Namespace('root', None, 'ROOT')
     table = Table()
-    
-    types = {}
 
     while queue:
         item = queue.popleft()
-        types.setdefault(group(item, root, table), []).append(item)
+        group(item, root, table)
 
     table.show()
 
@@ -411,12 +392,12 @@ def cli(args):
     print('-' * 80)
     print('* Namespacing')
     import json
-    print(json.dumps(root.as_dict(), indent=4))
+    #print(json.dumps(root.as_dict(), indent=4))
 
     print()
     print('-' * 80)
     print('* Generating')
-    generate(root, types, open('foo.md', 'w'))
+    generate(root, open('foo.md', 'w'))
 
     # * cls; python dock.py test_dock.py
 
