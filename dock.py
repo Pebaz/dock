@@ -280,32 +280,39 @@ def group(obj: T, root, table):
 
     if isinstance(obj, ModuleType) and name.endswith('__init__'):  # Package
         table.add('PACKAGE', fully_qualified_name)
-        namespace.new(first_name, obj)
+        namespace.new(first_name, obj, 'PACKAGE')
+        return 'PACKAGE'
 
     elif isinstance(obj, ModuleType):  # Module
         table.add('MODULE', fully_qualified_name)
-        namespace.new(first_name, obj)
+        namespace.new(first_name, obj, 'MODULE')
+        return 'MODULE'
     
     elif isinstance(obj, type):  # Class
         table.add('CLASS', fully_qualified_name)
-        namespace.new(first_name, obj)
+        namespace.new(first_name, obj, 'CLASS')
+        return 'CLASS'
 
     elif callable(obj):  # Method or Function
         table.add('FUNCTION', fully_qualified_name)
         namespace.add(first_name, obj)
+        return 'FUNCTION'
+    
+
 
 
 class Namespace:
-    def __init__(self, name, obj):
+    def __init__(self, name, obj, type_):
         self.name = name
         self.namespace = {}
         self.ref = obj
+        self.type = type_
 
     def __str__(self):
         return f'<{self.name}>'
 
-    def new(self, name, obj):
-        self.namespace[name] = Namespace(name, obj)
+    def new(self, name, obj, type_):
+        self.namespace[name] = Namespace(name, obj, type_)
     
     def add(self, name, obj):
         self.namespace[name] = obj
@@ -323,9 +330,17 @@ class Namespace:
         return result
 
 
-def generate(namespace, file=None):
+def generate(namespace, types, file=None):
     out = {'file': file} if file else {}
 
+    for type_ in types:
+        # if type_ == 'PACKAGE':
+        #     continue
+        print(f'#### {type_.capitalize()}s', **out)
+        for value in types[type_]:
+            print('-', get_absolute_name(value), **out)
+            print(**out)
+        print(**out)
 
 
 
@@ -378,13 +393,14 @@ def cli(args):
     print('-' * 80)
     print('* Docking')
 
-    root = Namespace('root', None)
-    # foo = open('foo.md', 'w')
+    root = Namespace('root', None, 'ROOT')
     table = Table()
+    
+    types = {}
 
     while queue:
         item = queue.popleft()
-        group(item, root, table)
+        types.setdefault(group(item, root, table), []).append(item)
 
     table.show()
 
@@ -393,6 +409,11 @@ def cli(args):
     print('* Namespacing')
     import json
     print(json.dumps(root.as_dict(), indent=4))
+
+    print()
+    print('-' * 80)
+    print('* Generating')
+    generate(root, types, open('foo.md', 'w'))
 
     # * cls; python dock.py test_dock.py
 
