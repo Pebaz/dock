@@ -304,7 +304,8 @@ def group(obj: T, root, table):
     # * get extremely mirky when sorting them out. No meaning is lost anyway.
     elif callable(obj):  # Function
         table.add('FUNCTION', fully_qualified_name)
-        namespace.add(first_name, obj)
+        # ? namespace.add(first_name, obj)
+        namespace.new(Function(first_name, obj))
 
 
 class Namespace:
@@ -319,8 +320,8 @@ class Namespace:
     def new(self, namespace):
         self.namespace[namespace.name] = namespace
     
-    def add(self, name, obj):
-        self.namespace[name] = obj
+    # ? def add(self, name, obj):
+    # ?     self.namespace[name] = obj
     
     def get(self, name):
         return self.namespace[name]
@@ -337,15 +338,16 @@ class Namespace:
     def get_funcs(self):
         return [
             *filter(
-                lambda item: not isinstance(item, Namespace),
+                lambda item: isinstance(item, Function),
                 self.namespace.values()
             )
         ]
 
     def get_namespaces(self):
+        classes = Namespace, Package, Module, Class
         return [
             *filter(
-                lambda item: isinstance(item, Namespace),
+                lambda item: isinstance(item, classes),
                 self.namespace.values()
             )
         ]
@@ -375,29 +377,32 @@ class Class(Namespace):
 
     def header(self):
         return f'### Class `{get_absolute_name(self.ref)}`'
-    
-    def generate1(self):
-        print(self.header())
-
-        for func in self.get_funcs():
-            # TODO(pebaz): func.generate()
-            print(f'### Function `{get_absolute_name(item)}`', **out)
-
-        for namespace in self.get_namespaces():
-            namespace.generate()
-
-    
 
 
-def generate(namespace, file=None):
+class Function:
+    def __init__(self, name, obj):
+        self.name = name
+        self.ref = obj
+
+    def __str__(self):
+        return f'<FUNCTION {self.name}>'
+
+    def header(self):
+        return f'#### Function `{get_absolute_name(self.ref)}`'
+
+    def generate(self, out):
+        print(self.header(), **out)
+
+
+def generate_namespace(namespace, file=None):
     out = {'file': file} if file else {}
 
     for func in namespace.get_funcs():
-        print(f'#### Function `{get_absolute_name(func)}`', **out)
+        func.generate(out)
 
     for item in namespace.get_namespaces():
         item.generate(out)
-        generate(item, file)
+        generate_namespace(item, file)
 
 
 def cli(args):
@@ -467,7 +472,7 @@ def cli(args):
     print()
     print('-' * 80)
     print('* Generating')
-    generate(root, open('foo.md', 'w'))
+    generate_namespace(root, open('foo.md', 'w'))
 
     # * cls; python dock.py test_dock.py
 
