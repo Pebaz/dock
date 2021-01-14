@@ -2,8 +2,6 @@
 
 #### Function `foo.package_function` 
 
-**Arguments**
-
 <details><summary>Source</summary>
 
 ```python
@@ -18,8 +16,6 @@ def package_function():
 ### Class `foo.PackageClass`
 #### Function `foo.PackageClass.__init__` 
 
-**Arguments**
-
 <details><summary>Source</summary>
 
 ```python
@@ -32,8 +28,6 @@ def __init__(self):
 </details>
 
 #### Function `foo.PackageClass.asdf` 
-
-**Arguments**
 
 <details><summary>Source</summary>
 
@@ -49,8 +43,6 @@ def asdf(self):
 ### Class `foo.PackageClass.InnerPackageClass`
 #### Function `foo.PackageClass.InnerPackageClass.__init__` 
 
-**Arguments**
-
 <details><summary>Source</summary>
 
 ```python
@@ -63,8 +55,6 @@ def __init__(self):
 </details>
 
 #### Function `foo.PackageClass.InnerPackageClass.asdf` 
-
-**Arguments**
 
 <details><summary>Source</summary>
 
@@ -86,8 +76,6 @@ It can be multi-line, and contain copyright notices, etc.
 
 #### Function `foo.fooer.asdf` 
 
-**Arguments**
-
 A function that does something that could work if it didn't.
 <details><summary>Source</summary>
 
@@ -102,8 +90,6 @@ def asdf():
 
 #### Function `foo.fooer.bar` 
 
-**Arguments**
-
 A function that does something that could work if it didn't.
 <details><summary>Source</summary>
 
@@ -117,8 +103,6 @@ def bar():
 </details>
 
 #### Function `foo.fooer.long_name` 
-
-**Arguments**
 
 
 First line is a short description.
@@ -167,8 +151,6 @@ You can [click this](http://www.google.com)
 
 #### Function `foo.fooer.ClassOne.look` 
 
-**Arguments**
-
 Something looking
 <details><summary>Source</summary>
 
@@ -183,8 +165,6 @@ def look(self):
 
 ### Class `foo.fooer.ClassOne.InnerOne`
 #### Function `foo.fooer.ClassOne.InnerOne.look_innerone` 
-
-**Arguments**
 
 <details><summary>Source</summary>
 
@@ -212,8 +192,6 @@ This can contain any helpful information such as the below points:
 
 #### Function `foo.bar.barrer.asdf` 
 
-**Arguments**
-
 Just another place to put documentation.
 <details><summary>Source</summary>
 
@@ -226,6 +204,39 @@ def asdf():
 
 </details>
 
+#### Function `foo.bar.barrer.asdf2` 
+
+> Whatever?
+
+**Arguments**
+
+- `name` -> `builtins.str`: *The name to greet.*
+- `age` -> `builtins.int`: 
+- `alive` -> `builtins.bool`: 
+
+This is a longer description.
+
+<details><summary>Source</summary>
+
+```python
+@dock(
+    name='The name to greet.',
+    short='Whatever?',
+    usage='''
+    >>> print("Hello World!")
+    >>> for i in range(100):
+    ...     print(i ** 2)
+    '''
+)
+def asdf2(name: str, age: int, alive: bool):
+    """
+    This is a longer description.
+    """
+
+```
+
+</details>
+
 # Package `foo.bar.baz` 
 
 ## Module `foo.bar.baz.bazzer` 
@@ -233,8 +244,6 @@ def asdf():
 #### Function `foo.bar.baz.bazzer.asdf` 
 
 > "Why does this exist?"
-
-**Arguments**
 
 
 This is a much longer description.

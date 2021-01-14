@@ -177,7 +177,12 @@ class Table:
             print()
 
 
-def dock(returns: str = None, raises: str = None, **arg_or_field_docs) -> T:
+def dock(
+    returns: str = None,
+    raises: str = None,
+    short: str = None,
+    **arg_or_field_docs
+) -> T:
     """
     ! Must be defined last so that it can put the annotation on the last func.
     """
@@ -187,11 +192,12 @@ def dock(returns: str = None, raises: str = None, **arg_or_field_docs) -> T:
         func_or_class = returns
 
         if isinstance(func_or_class, type):
-            func_or_class.__dock__ = {'fields': arg_or_field_docs}
+            func_or_class.__dock__ = {'fields': {}}
         else:
             func_or_class.__dock__ = {
                 'returns': None,
                 'raises': None,
+                'short': None,
                 'arguments': {}
             }
 
@@ -208,10 +214,25 @@ def dock(returns: str = None, raises: str = None, **arg_or_field_docs) -> T:
                 func_or_class.__dock__ = {'fields': arg_or_field_docs}
 
             else:
+                argument_names = set(
+                    getattr(func_or_class, '__annotations__', {}).keys()
+                )
+
+                argument_descriptions = {}
+                sections = {}
+
+                for key, value in arg_or_field_docs.items():
+                    if key in argument_names:
+                        argument_descriptions[key] = value
+                    else:
+                        sections[key] = value
+
                 func_or_class.__dock__ = {
                     'returns': returns,
                     'raises': raises,
-                    'arguments': arg_or_field_docs
+                    'arguments': argument_descriptions,
+                    'short': short,
+                    **sections  # Possibly overwrite short
                 }
 
             return func_or_class
@@ -283,8 +304,6 @@ def group(obj: T, root, table):
     fully_qualified_name = get_absolute_name(obj)
     namespace_parts = fully_qualified_name.split('.')
     first_name = namespace_parts.pop(-1)
-
-    print(fully_qualified_name)
 
     namespace = root
     for each_name in namespace_parts:
@@ -413,20 +432,34 @@ class Function:
     def generate(self, out):
         print(self.header(), '\n', **out)
 
-        # ! FIX THIS: AUTOMATICALLY FIGURE OUT WHICH ONES ARE ARGUMENTS
         # Short description
-        if self.ref.__dock__['arguments'].get('short'):
-            print(f'> {self.ref.__dock__["arguments"]["short"]}\n', **out)
+        if self.ref.__dock__.get('short'):
+            print(f'> {self.ref.__dock__["short"]}\n', **out)
 
         # Argument Types
-        print('**Arguments**\n', **out)
-        # - `arg3` -> `pack.mod.Class1`: *arg description*
+        ann = getattr(self.ref, '__annotations__', {})
+        if ann:
+            print('**Arguments**\n', **out)
+
+            output = {
+                k: [get_absolute_name(v) if v else '?', '']
+                for k, v in ann.items()
+            }
+            for argument, desc in self.ref.__dock__['arguments'].items():
+                output[argument][1] = f'*{desc}*'
+
+            
+            for argument, (type_, desc) in output.items():
+
+                print(f'- `{argument}` -> `{type_}`: {desc}', **out)
 
         # Return Type
 
         # Long description
         if self.ref.__doc__:
             print(dedent(self.ref.__doc__), **out)
+
+        # Other sections
 
         # Source code
         print('<details><summary>Source</summary>', **out)
@@ -509,7 +542,7 @@ def cli(args):
     print('-' * 80)
     print('* Namespacing')
     import json
-    print(json.dumps(root.as_dict(), indent=4))
+    # print(json.dumps(root.as_dict(), indent=4))
 
     print()
     print('-' * 80)
