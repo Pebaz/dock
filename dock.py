@@ -261,77 +261,22 @@ def group(obj: T, file=None, table=None, namespace={}):
     if not full_name:  # Module or Package
         fully_qualified_name = f'{name.replace(".__init__", "")}'
 
-    else:
+    else:  # Methods or Functions
         fully_qualified_name = f'{MODULE}.{full_name}'
 
-    # fully_qualified_name = MODULE + (f'.{full_name}' if full_name else name.replace('.__init__', ''))
-
     if isinstance(obj, ModuleType) and name.endswith('__init__'):  # Package
-        # table.add('PACKAGE', name, '->', full_name, fully_qualified_name)
-        table.add('PACKAGE', fully_qualified_name, obj)
-        namespace.setdefault(name.replace('.__init__', ''), {})
+        table.add('PACKAGE', fully_qualified_name)
         return
 
     elif isinstance(obj, ModuleType):  # Module
-        # table.add('MODULE', name, '->', full_name, fully_qualified_name)
-        table.add('MODULE', fully_qualified_name, obj)
-        namespace.setdefault(name.replace('.__init__', ''), {})
+        table.add('MODULE', fully_qualified_name)
         return
     
     elif isinstance(obj, type):  # Class
-        # table.add('CLASS', name, '->', full_name, fully_qualified_name)
-        table.add('CLASS', fully_qualified_name, obj)
+        table.add('CLASS', fully_qualified_name)
 
     elif callable(obj):  # Method or Function
-        # table.add('FUNCTION', name, '->', full_name, fully_qualified_name)
-        table.add('FUNCTION', fully_qualified_name, obj)
-    
-    next_ = namespace
-    for name in full_name.split('.'):
-        next_ = next_.setdefault(name, {})
-
-
-    # dock = obj.__dock__
-    # doc = dedent(getattr(obj, '__doc__', None) or '')
-    # ann = getattr(obj, '__annotations__', {})
-
-    # is_class = isinstance(obj, type)
-    # lines = [i.strip() for i in doc.splitlines() if i.strip()]
-    # short_desc = lines[0].strip()
-    # long_desc = '\n'.join(lines[1:])
-
-    # print(f'## {"Class" if is_class else "Function"} {name}\n', **out)
-    # # print(f'{doc}\n', **out)
-    # print(f'> {short_desc}\n\n', **out)
-
-    # if is_class:  # Class
-    #     pass
-
-    # else:  # Function or method
-    #     arguments = dock.get('arguments', {})
-    #     returns = dock['returns']
-    #     raises = dock['raises']
-
-    #     signature_keys = set(ann.keys())
-    #     section_keys = set(arguments.keys()).intersection(signature_keys)
-
-    #     print('>>>', signature_keys, section_keys)
-
-    #     if arguments:
-    #         print(f'### Arguments\n', **out)
-
-    #         for arg_name, arg_doc in arguments.items():
-    #             if arg_name in section_keys:
-    #                 continue
-    #             print(f'**{arg_name}**: *{arg_doc}*\n', **out)
-
-    #     print(f'{long_desc}\n', **out)
-
-    #     if returns:
-    #         print(f'### Returns\n{dock["returns"]}\n', **out)
-
-    #     if raises:
-    #         print(f'### Raises\n{dock["raises"]}\n', **out)
+        table.add('FUNCTION', fully_qualified_name)
 
 
 def cli(args):
