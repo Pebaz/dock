@@ -125,6 +125,12 @@ asdfasdf
 """
 
 
+
+# TODO(pebaz): Spreadsheet().add(Column1='asdf', Column2=3)
+# TODO(pebaz): Spreadsheet().add(Other1='asdf', Column2=3)  # Works with empty
+# TODO(pebaz): This ensure that a header line is printed
+
+
 class Table:
     def __init__(self, margin=1, sep='|', align='center'):
         assert align in {'center', 'ljust', 'rjust'}
@@ -250,28 +256,35 @@ def group(obj: T, file=None, table=None, namespace={}):
     name = obj.__name__  # ! Explicitly fail if somehow not named
     full_name = getattr(obj, '__qualname__', '').replace('<locals>.', '')
 
+    MODULE = getattr(obj, '__module__', getattr(obj, '__package__', name))
 
+    if not full_name:  # Module or Package
+        fully_qualified_name = f'{name.replace(".__init__", "")}'
 
+    else:
+        fully_qualified_name = f'{MODULE}.{full_name}'
 
-    MODULE = getattr(obj, '__module__', getattr(obj, '__package__', None))
-
-
+    # fully_qualified_name = MODULE + (f'.{full_name}' if full_name else name.replace('.__init__', ''))
 
     if isinstance(obj, ModuleType) and name.endswith('__init__'):  # Package
-        table.add('PACKAGE', name, '->', full_name, MODULE)
+        # table.add('PACKAGE', name, '->', full_name, fully_qualified_name)
+        table.add('PACKAGE', fully_qualified_name, obj)
         namespace.setdefault(name.replace('.__init__', ''), {})
         return
 
     elif isinstance(obj, ModuleType):  # Module
-        table.add('MODULE', name, '->', full_name, MODULE)
+        # table.add('MODULE', name, '->', full_name, fully_qualified_name)
+        table.add('MODULE', fully_qualified_name, obj)
         namespace.setdefault(name.replace('.__init__', ''), {})
         return
     
     elif isinstance(obj, type):  # Class
-        table.add('CLASS', name, '->', full_name, MODULE)
+        # table.add('CLASS', name, '->', full_name, fully_qualified_name)
+        table.add('CLASS', fully_qualified_name, obj)
 
     elif callable(obj):  # Method or Function
-        table.add('FUNCTION', name, '->', full_name, MODULE)
+        # table.add('FUNCTION', name, '->', full_name, fully_qualified_name)
+        table.add('FUNCTION', fully_qualified_name, obj)
     
     next_ = namespace
     for name in full_name.split('.'):
