@@ -470,13 +470,10 @@ class Function:
 
             print('\n', **out)
 
-            
-
+            # Return Type
             for argument, (type_, desc) in output.items():
                 if argument == 'return':
                     print(f'**Return Type:** `{type_}`', **out)
-
-            # Return Type
 
         print('\n', **out)
 
