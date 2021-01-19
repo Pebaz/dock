@@ -2,7 +2,7 @@ import sys
 import importlib
 import inspect
 from types import ModuleType
-from typing import TypeVar, Optional, List
+from typing import TypeVar, Optional, List, _GenericAlias
 from pathlib import Path
 from collections import deque
 from textwrap import dedent
@@ -178,14 +178,80 @@ class Table:
 
 
 def dock(
-    returns: str = None,
-    raises: str = None,
-    short: str = None,
+    *func_or_class,
+    returns: Optional[str] = None,
+    raises: Optional[str] = None,
+    short: Optional[str] = None,
     **arg_or_field_docs
 ) -> T:
     """
+    @dock
+    @dock()
+    @dock(returns="")
+    @dock(random="")
+    @dock(1, 2, 3, returns='')
+    """
+    """
     ! Must be defined last so that it can put the annotation on the last func.
     """
+
+    def inner(func_or_class: T) -> T:
+        """
+        Closure that has access to `returns`, `raises`, and
+        `arg_or_field_docs` due to the enclosing `if` statement.
+        """
+        if isinstance(func_or_class, type):
+            func_or_class.__dock__ = {'fields': arg_or_field_docs}
+
+        else:
+            argument_names = set(
+                getattr(func_or_class, '__annotations__', {}).keys()
+            )
+
+            argument_descriptions = {}
+            sections = {}
+
+            for key, value in arg_or_field_docs.items():
+                if key in argument_names:
+                    argument_descriptions[key] = value
+                else:
+                    sections[key] = value
+
+            func_or_class.__dock__ = {
+                'returns': returns,
+                'raises': raises,
+                'arguments': argument_descriptions,
+                'short': short,
+                'sections': sections
+            }
+
+        return func_or_class
+
+    # Takes exactly 0 or 1 positional arguments
+    if len(func_or_class) not in {0, 1}:
+        print('!!!!!!!!!!!! ->', func_or_class)
+        raise DockException()
+    
+    # Handle: @dock
+    elif func_or_class:
+        (func_or_class,) = func_or_class
+
+        if isinstance(func_or_class, type):
+            func_or_class.__dock__ = {'fields': {}}
+        else:
+            func_or_class.__dock__ = {
+                'returns': None,
+                'raises': None,
+                'short': None,
+                'arguments': {}
+            }
+
+        return func_or_class
+
+    else:
+        return inner
+
+    return
 
     # Handle: @dock
     if callable(returns) or isinstance(returns, type):
@@ -232,7 +298,7 @@ def dock(
                     'raises': raises,
                     'arguments': argument_descriptions,
                     'short': short,
-                    **sections  # Possibly overwrite short
+                    'sections': sections
                 }
 
             return func_or_class
@@ -285,7 +351,13 @@ def get_modules(path: Path) -> List[str]:
 def get_absolute_name(obj: T) -> str:
     "Used to create interlinks"
 
-    name = obj.__name__  # ! Explicitly fail if somehow not named
+    if not hasattr(obj, '__name__') and isinstance(obj, _GenericAlias):
+        name = repr(obj)
+    else:
+        name = obj.__name__
+
+    # name = obj.__name__  # ! Explicitly fail if somehow not named
+
     full_name = getattr(obj, '__qualname__', '').replace('<locals>.', '')
 
     MODULE = getattr(obj, '__module__', getattr(obj, '__package__', name))

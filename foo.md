@@ -239,6 +239,35 @@ def asdf2(name: str, age: int, alive: bool):
 
 # Package `foo.bar.baz` 
 
+#### Function `foo.bar.baz.some_func` 
+
+**Arguments**
+
+- `a` -> `builtins.int`: 
+- `b` -> `builtins.int`: 
+- `c` -> `builtins.int`: 
+- `return` -> `typing.Tuple[int, int, int]`: 
+<details><summary>Source</summary>
+
+```python
+@dock(
+    Usage="""
+    >>> a, b, c = some_func(1, 2, 3)
+    >>> a
+    1
+    >>> b
+    2
+    >>> c
+    3
+    """
+)
+def some_func(a: int, b: int, c: int) -> Tuple[int, int, int]:
+    return a, b, c
+
+```
+
+</details>
+
 ## Module `foo.bar.baz.bazzer` 
 
 #### Function `foo.bar.baz.bazzer.asdf` 
