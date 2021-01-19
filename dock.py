@@ -243,72 +243,14 @@ def dock(
                 'returns': None,
                 'raises': None,
                 'short': None,
-                'arguments': {}
+                'arguments': {},
+                'sections': {}
             }
 
         return func_or_class
 
     else:
         return inner
-
-    return
-
-    # Handle: @dock
-    if callable(returns) or isinstance(returns, type):
-        func_or_class = returns
-
-        if isinstance(func_or_class, type):
-            func_or_class.__dock__ = {'fields': {}}
-        else:
-            func_or_class.__dock__ = {
-                'returns': None,
-                'raises': None,
-                'short': None,
-                'arguments': {}
-            }
-
-        return func_or_class
-
-    # Handle: @dock(...)
-    elif isinstance(returns, str) or returns is None:
-        def inner(func_or_class: T) -> T:
-            """
-            Closure that has access to `returns`, `raises`, and
-            `arg_or_field_docs` due to the enclosing `if` statement.
-            """
-            if isinstance(func_or_class, type):
-                func_or_class.__dock__ = {'fields': arg_or_field_docs}
-
-            else:
-                argument_names = set(
-                    getattr(func_or_class, '__annotations__', {}).keys()
-                )
-
-                argument_descriptions = {}
-                sections = {}
-
-                for key, value in arg_or_field_docs.items():
-                    if key in argument_names:
-                        argument_descriptions[key] = value
-                    else:
-                        sections[key] = value
-
-                func_or_class.__dock__ = {
-                    'returns': returns,
-                    'raises': raises,
-                    'arguments': argument_descriptions,
-                    'short': short,
-                    'sections': sections
-                }
-
-            return func_or_class
-
-        return inner
-
-    # Handle bad input: dock(123)
-    else:
-        raise DockException()
-
 
 
 # TODO(pebaz): help(some_dock_func) needs to work with the extra doc fields
@@ -522,16 +464,34 @@ class Function:
 
             
             for argument, (type_, desc) in output.items():
-
+                if argument == 'return':
+                    continue
                 print(f'- `{argument}` -> `{type_}`: {desc}', **out)
 
-        # Return Type
+            print('\n', **out)
+
+            
+
+            for argument, (type_, desc) in output.items():
+                if argument == 'return':
+                    print(f'**Return Type:** `{type_}`', **out)
+
+            # Return Type
+
+        print('\n', **out)
 
         # Long description
         if self.ref.__doc__:
             print(dedent(self.ref.__doc__), **out)
 
+        print('\n', **out)
+
         # Other sections
+        for section_name, section in self.ref.__dock__['sections'].items():
+            print(f'**{section_name}**\n', **out)
+            print(dedent(section), **out)
+
+        print('\n', **out)
 
         # Source code
         print('<details><summary>Source</summary>', **out)

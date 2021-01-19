@@ -2,6 +2,12 @@
 
 #### Function `foo.package_function` 
 
+
+
+
+
+
+
 <details><summary>Source</summary>
 
 ```python
@@ -16,6 +22,12 @@ def package_function():
 ### Class `foo.PackageClass`
 #### Function `foo.PackageClass.__init__` 
 
+
+
+
+
+
+
 <details><summary>Source</summary>
 
 ```python
@@ -28,6 +40,12 @@ def __init__(self):
 </details>
 
 #### Function `foo.PackageClass.asdf` 
+
+
+
+
+
+
 
 <details><summary>Source</summary>
 
@@ -43,6 +61,12 @@ def asdf(self):
 ### Class `foo.PackageClass.InnerPackageClass`
 #### Function `foo.PackageClass.InnerPackageClass.__init__` 
 
+
+
+
+
+
+
 <details><summary>Source</summary>
 
 ```python
@@ -55,6 +79,12 @@ def __init__(self):
 </details>
 
 #### Function `foo.PackageClass.InnerPackageClass.asdf` 
+
+
+
+
+
+
 
 <details><summary>Source</summary>
 
@@ -76,7 +106,13 @@ It can be multi-line, and contain copyright notices, etc.
 
 #### Function `foo.fooer.asdf` 
 
+
+
 A function that does something that could work if it didn't.
+
+
+
+
 <details><summary>Source</summary>
 
 ```python
@@ -90,7 +126,13 @@ def asdf():
 
 #### Function `foo.fooer.bar` 
 
+
+
 A function that does something that could work if it didn't.
+
+
+
+
 <details><summary>Source</summary>
 
 ```python
@@ -105,12 +147,30 @@ def bar():
 #### Function `foo.fooer.long_name` 
 
 
+
+
 First line is a short description.
 
 Lorem ipsum, or lipsum as it is sometimes known, is dummy text used in
 laying out print, graphic or web designs. The passage is attributed to an
 unknown typesetter in the 15th century who is thought to have scrambled
 parts of Cicero's De Finibus Bonorum et Malorum for use in a type
+
+
+
+**asdf**
+
+What in the world?
+**Section1**
+
+
+This is a long section
+with multiple lines.
+
+**Section2**
+
+Shorter section
+
 
 <details><summary>Source</summary>
 
@@ -151,7 +211,13 @@ You can [click this](http://www.google.com)
 
 #### Function `foo.fooer.ClassOne.look` 
 
+
+
 Something looking
+
+
+
+
 <details><summary>Source</summary>
 
 ```python
@@ -165,6 +231,12 @@ def look(self):
 
 ### Class `foo.fooer.ClassOne.InnerOne`
 #### Function `foo.fooer.ClassOne.InnerOne.look_innerone` 
+
+
+
+
+
+
 
 <details><summary>Source</summary>
 
@@ -192,7 +264,13 @@ This can contain any helpful information such as the below points:
 
 #### Function `foo.bar.barrer.asdf` 
 
+
+
 Just another place to put documentation.
+
+
+
+
 <details><summary>Source</summary>
 
 ```python
@@ -214,7 +292,22 @@ def asdf():
 - `age` -> `builtins.int`: 
 - `alive` -> `builtins.bool`: 
 
+
+
+
+
 This is a longer description.
+
+
+
+**usage**
+
+
+>>> print("Hello World!")
+>>> for i in range(100):
+...     print(i ** 2)
+
+
 
 <details><summary>Source</summary>
 
@@ -246,12 +339,34 @@ def asdf2(name: str, age: int, alive: bool):
 - `a` -> `builtins.int`: 
 - `b` -> `builtins.int`: 
 - `c` -> `builtins.int`: 
-- `return` -> `typing.Tuple[int, int, int]`: 
+
+
+**Return Type:** `typing.Tuple[int, int, int]`
+
+
+
+
+**Usage**
+
+
+```python
+>>> a, b, c = some_func(1, 2, 3)
+>>> a
+1
+>>> b
+2
+>>> c
+3
+```
+
+
+
 <details><summary>Source</summary>
 
 ```python
 @dock(
     Usage="""
+    ```python
     >>> a, b, c = some_func(1, 2, 3)
     >>> a
     1
@@ -259,6 +374,7 @@ def asdf2(name: str, age: int, alive: bool):
     2
     >>> c
     3
+    ```
     """
 )
 def some_func(a: int, b: int, c: int) -> Tuple[int, int, int]:
@@ -275,11 +391,17 @@ def some_func(a: int, b: int, c: int) -> Tuple[int, int, int]:
 > "Why does this exist?"
 
 
+
+
 This is a much longer description.
 
 Why would you want to have a shorter long description? If you do, you
 might not know what you actually want because long descriptions are
 far more descriptive.
+
+
+
+
 
 <details><summary>Source</summary>
 

@@ -3,6 +3,7 @@ import dock
 
 @dock(
     Usage="""
+    ```python
     >>> a, b, c = some_func(1, 2, 3)
     >>> a
     1
@@ -10,6 +11,7 @@ import dock
     2
     >>> c
     3
+    ```
     """
 )
 def some_func(a: int, b: int, c: int) -> Tuple[int, int, int]:
