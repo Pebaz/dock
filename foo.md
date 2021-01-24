@@ -338,15 +338,22 @@ def asdf2(name: str, age: int, alive: bool):
 
 #### Function `foo.bar.baz.some_func` 
 
+> Just a little function that does nothing at all.
+
 **Arguments**
 
 - `a` -> `builtins.int`: 
-- `b` -> `builtins.int`: 
-- `c` -> `builtins.int`: 
+- `b` -> `builtins.int`: *Just something*
+- `c` -> [foo.bar.baz.ASDF](#Class-foo.bar.baz.ASDF): 
 
 
 **Return Type:** `typing.Tuple[int, int, int]`
 
+
+
+Can be used if you want.
+
+It doesn't really matter.
 
 
 
@@ -369,6 +376,7 @@ def asdf2(name: str, age: int, alive: bool):
 
 ```python
 @dock(
+    short='Just a little function that does nothing at all.',
     Usage="""
     ```python
     >>> a, b, c = some_func(1, 2, 3)
@@ -379,15 +387,22 @@ def asdf2(name: str, age: int, alive: bool):
     >>> c
     3
     ```
-    """
+    """,
+    b='Just something'
 )
-def some_func(a: int, b: int, c: int) -> Tuple[int, int, int]:
+def some_func(a: int, b: int, c: ASDF) -> Tuple[int, int, int]:
+    """
+    Can be used if you want.
+
+    It doesn't really matter.
+    """
     return a, b, c
 
 ```
 
 </details>
 
+### Class `foo.bar.baz.ASDF`
 ## Module `foo.bar.baz.bazzer` 
 
 #### Function `foo.bar.baz.bazzer.asdf` 

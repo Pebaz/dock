@@ -325,21 +325,24 @@ def group(obj: T, root, table):
 
     if isinstance(obj, ModuleType) and name.endswith('__init__'):  # Package
         table.add('PACKAGE', fully_qualified_name)
-        namespace.new(Package(first_name, obj))
+        type_to_register = Package(first_name, obj)
 
     elif isinstance(obj, ModuleType):  # Module
         table.add('MODULE', fully_qualified_name)
-        namespace.new(Module(first_name, obj))
+        type_to_register = Module(first_name, obj)
     
     elif isinstance(obj, type):  # Class
         table.add('CLASS', fully_qualified_name)
-        namespace.new(Class(first_name, obj))
+        type_to_register = Class(first_name, obj)
 
     # * Not making a distinction here between methods/functions since this can
     # * get extremely mirky when sorting them out. No meaning is lost anyway.
     elif callable(obj):  # Function
         table.add('FUNCTION', fully_qualified_name)
-        namespace.new(Function(first_name, obj))
+        type_to_register = Function(first_name, obj)
+
+    namespace.new(type_to_register)
+    root.register_type(fully_qualified_name, type_to_register)
 
 
 class Namespace:
@@ -347,6 +350,10 @@ class Namespace:
         self.name = name
         self.namespace = {}
         self.ref = obj
+        self.name_db = {}
+
+    def register_type(self, type_name, type_class):
+        self.name_db[type_name] = type_class
 
     def __str__(self):
         return f'<NAMESPACE {self.name}>'
@@ -383,7 +390,7 @@ class Namespace:
             )
         ]
         
-    def generate(self, out):
+    def generate(self, name_db, out):
         print(self.header(), **out)
 
 class Package(Namespace):
@@ -393,7 +400,7 @@ class Package(Namespace):
     def header(self):
         return f'# Package `{get_absolute_name(self.ref)}`'
 
-    def generate(self, out):
+    def generate(self, name_db, out):
         print(self.header(), '\n', **out)
 
         # Long description
@@ -407,7 +414,7 @@ class Module(Namespace):
     def header(self):
         return f'## Module `{get_absolute_name(self.ref)}`'
 
-    def generate(self, out):
+    def generate(self, name_db, out):
         print(self.header(), '\n', **out)
 
         # Long description
@@ -422,7 +429,7 @@ class Class(Namespace):
     def header(self):
         return f'### Class `{get_absolute_name(self.ref)}`'
     
-    def generate(self, out):
+    def generate(self, name_db, out):
         print(self.header(), **out)
 
         # Long description
@@ -443,7 +450,7 @@ class Function:
     def header(self):
         return f'#### Function `{get_absolute_name(self.ref)}`'
 
-    def generate(self, out):
+    def generate(self, name_db, out):
         print(self.header(), '\n', **out)
 
         # Short description
@@ -459,14 +466,21 @@ class Function:
                 k: [get_absolute_name(v) if v else '?', '']
                 for k, v in ann.items()
             }
+
             for argument, desc in self.ref.__dock__['arguments'].items():
                 output[argument][1] = f'*{desc}*'
 
-            
             for argument, (type_, desc) in output.items():
                 if argument == 'return':
                     continue
-                print(f'- `{argument}` -> `{type_}`: {desc}', **out)
+
+                if type_ in name_db:  # Output interlink instead
+                    type_name = name_db[type_].__class__.__name__
+                    interlink = f'[{type_}](#{type_name}-{type_})'
+                    print(f'- `{argument}` -> {interlink}: {desc}', **out)
+                else:
+                    print(f'- `{argument}` -> `{type_}`: {desc}', **out)
+
 
             print('\n', **out)
 
@@ -498,15 +512,15 @@ class Function:
         print('</details>\n', **out)
 
 
-def generate_namespace(namespace, file=None):
+def generate_namespace(namespace, name_db, file=None):
     out = {'file': file} if file else {}
 
     for func in namespace.get_funcs():
-        func.generate(out)
+        func.generate(name_db, out)
 
     for item in namespace.get_namespaces():
-        item.generate(out)
-        generate_namespace(item, file)
+        item.generate(name_db, out)
+        generate_namespace(item, name_db, file)
 
 
 def cli(args):
@@ -576,7 +590,7 @@ def cli(args):
     print()
     print('-' * 80)
     print('* Generating')
-    generate_namespace(root, open('foo.md', 'w'))
+    generate_namespace(root, root.name_db, open('foo.md', 'w'))
 
     # * cls; python dock.py test_dock.py
 
