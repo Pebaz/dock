@@ -394,6 +394,7 @@ class Namespace:
     def generate(self, name_db, out):
         print(self.header(), **out)
 
+
 class Package(Namespace):
     def __str__(self):
         return f'<PACKAGE {self.name}>'
@@ -407,6 +408,7 @@ class Package(Namespace):
         # Long description
         if self.ref.__doc__:
             print(dedent(self.ref.__doc__), **out)
+
 
 class Module(Namespace):
     def __str__(self):
@@ -426,7 +428,7 @@ class Module(Namespace):
         for obj in self.namespace.values():
             absolue = obj.absolute_name
             type_name = obj.__class__.__name__
-            print(f'- {type_name} [{absolue}](#{type_name}-{absolue})', **out)
+            print(f'- {type_name} [{obj.name}](#{type_name}-{absolue})', **out)
 
 
 class Class(Namespace):
