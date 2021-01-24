@@ -441,10 +441,11 @@ class Class(Namespace):
     def generate(self, name_db, out):
         print(self.header(), **out)
 
-        print('**Fields**\n', **out)
+        if self.ref.__dock__['fields']:
+            print('**Fields**\n', **out)
 
-        for field, desc in self.ref.__dock__['fields'].items():
-            print(f'- `{field}`: *{desc}*', **out)
+            for field, desc in self.ref.__dock__['fields'].items():
+                print(f'- `{field}`: *{desc}*', **out)
 
         # Long description
         if self.ref.__doc__:
@@ -514,7 +515,7 @@ class Function:
 
         # Other sections
         for section_name, section in self.ref.__dock__['sections'].items():
-            print(f'**{section_name}**\n', **out)
+            print(f'\n**{section_name}**\n', **out)
             print(dedent(section), **out)
 
         print('\n', **out)
@@ -536,6 +537,49 @@ def generate_namespace(namespace, name_db, file=None):
     for item in namespace.get_namespaces():
         item.generate(name_db, out)
         generate_namespace(item, name_db, file)
+
+
+class MarkdeepStyles:
+    __header = r'<link rel="stylesheet" href="https://casual-effects.com/markdeep/latest/{}.css?">'
+    DEFAULT = ''
+    JOURNAL = __header.format('journal')
+    APIDOC = __header.format('apidoc')
+    SLATE = __header.format('slate')
+    NEWSMAG = __header.format('newsmag')
+    WEBSITE = __header.format('website')
+    LATEX = __header.format('latex')
+    DARK = __header.format('dark')
+    SLIDES = __header.format('slides')
+
+
+MARKDEEP_HEADER = MarkdeepStyles.JOURNAL
+MARKDEEP_FOOTER = r'<!-- Markdeep: --><style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style><script src="markdeep.min.js" charset="utf-8"></script><script src="https://morgan3d.github.io/markdeep/latest/markdeep.min.js" charset="utf-8"></script><script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>'
+
+
+class OutputFile:
+    def write(self, text):
+        ...
+    
+    def interlink(self, type_, absolute_name):
+        ...
+
+class MarkdownFile(OutputFile):
+    def __init__(self, path):
+        self.file = open(path, 'w')
+
+    def write(self, text):
+        self.file.write()
+
+    def interlink(self, type_, absolute_name):
+        return f'[{absolute_name}](#{type_}-{absolute_name})'
+
+class HTMLFile(OutputFile):
+    def interlink(self, type_, absolute_name):
+        return f'[{absolute_name}](#{type_}-{absolute_name})'
+        return f'<a href="">{absolute_name}</a>'
+
+class Folder(OutputFile):
+    ...
 
 
 def cli(args):
@@ -605,7 +649,10 @@ def cli(args):
     print()
     print('-' * 80)
     print('* Generating')
-    generate_namespace(root, root.name_db, open('foo.md', 'w'))
+    output_file = open('foo.md.html', 'w')
+    output_file.write(MARKDEEP_HEADER)
+    generate_namespace(root, root.name_db, output_file)
+    output_file.write(MARKDEEP_FOOTER)
 
     # * cls; python dock.py test_dock.py
 
