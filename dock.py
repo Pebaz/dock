@@ -441,6 +441,11 @@ class Class(Namespace):
     def generate(self, name_db, out):
         print(self.header(), **out)
 
+        print('**Fields**\n', **out)
+
+        for field, desc in self.ref.__dock__['fields'].items():
+            print(f'- `{field}`: *{desc}*', **out)
+
         # Long description
         if self.ref.__doc__:
             print(dedent(self.ref.__doc__), **out)

@@ -11,7 +11,11 @@ def asdf():
     "A function that does something that could work if it didn't."
 
 
-@dock
+@dock(
+    other='Something',
+    other2='Somethine else',
+    other3='Yet another one'
+)
 class ClassOne:
     """
     ### Usage

@@ -20,6 +20,8 @@ def package_function():
 </details>
 
 ### Class `foo.PackageClass`
+**Fields**
+
 #### Function `foo.PackageClass.__init__` 
 
 
@@ -59,6 +61,8 @@ def asdf(self):
 </details>
 
 ### Class `foo.PackageClass.InnerPackageClass`
+**Fields**
+
 #### Function `foo.PackageClass.InnerPackageClass.__init__` 
 
 
@@ -202,6 +206,11 @@ def long_name(asdf):
 </details>
 
 ### Class `foo.fooer.ClassOne`
+**Fields**
+
+- `other`: *Something*
+- `other2`: *Somethine else*
+- `other3`: *Yet another one*
 
 ### Usage
 
@@ -234,6 +243,8 @@ def look(self):
 </details>
 
 ### Class `foo.fooer.ClassOne.InnerOne`
+**Fields**
+
 #### Function `foo.fooer.ClassOne.InnerOne.look_innerone` 
 
 
@@ -409,6 +420,8 @@ def some_func(a: int, b: int, c: ASDF) -> Tuple[int, int, int]:
 </details>
 
 ### Class `foo.bar.baz.ASDF`
+**Fields**
+
 ## Module `foo.bar.baz.bazzer` 
 
 - Function [asdf](#Function-foo.bar.baz.bazzer.asdf)
