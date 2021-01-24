@@ -325,29 +325,30 @@ def group(obj: T, root, table):
 
     if isinstance(obj, ModuleType) and name.endswith('__init__'):  # Package
         table.add('PACKAGE', fully_qualified_name)
-        type_to_register = Package(first_name, obj)
+        type_to_register = Package(first_name, obj, fully_qualified_name)
 
     elif isinstance(obj, ModuleType):  # Module
         table.add('MODULE', fully_qualified_name)
-        type_to_register = Module(first_name, obj)
+        type_to_register = Module(first_name, obj, fully_qualified_name)
     
     elif isinstance(obj, type):  # Class
         table.add('CLASS', fully_qualified_name)
-        type_to_register = Class(first_name, obj)
+        type_to_register = Class(first_name, obj, fully_qualified_name)
 
     # * Not making a distinction here between methods/functions since this can
     # * get extremely mirky when sorting them out. No meaning is lost anyway.
     elif callable(obj):  # Function
         table.add('FUNCTION', fully_qualified_name)
-        type_to_register = Function(first_name, obj)
+        type_to_register = Function(first_name, obj, fully_qualified_name)
 
     namespace.new(type_to_register)
     root.register_type(fully_qualified_name, type_to_register)
 
 
 class Namespace:
-    def __init__(self, name, obj):
+    def __init__(self, name, obj, absolute_name):
         self.name = name
+        self.absolute_name = absolute_name
         self.namespace = {}
         self.ref = obj
         self.name_db = {}
@@ -421,6 +422,12 @@ class Module(Namespace):
         if self.ref.__doc__:
             print(dedent(self.ref.__doc__), **out)
 
+        # Output interlinks for each inner object
+        for obj in self.namespace.values():
+            absolue = obj.absolute_name
+            type_name = obj.__class__.__name__
+            print(f'- {type_name} [{absolue}](#{type_name}-{absolue})', **out)
+
 
 class Class(Namespace):
     def __str__(self):
@@ -436,12 +443,13 @@ class Class(Namespace):
         if self.ref.__doc__:
             print(dedent(self.ref.__doc__), **out)
 
-        # TODO(pebaz): Print out class heirarchy
+        # TODO(pebaz): Print out class heirarchy using MRO
 
 
 class Function:
-    def __init__(self, name, obj):
+    def __init__(self, name, obj, absolute_name):
         self.name = name
+        self.absolute_name = absolute_name
         self.ref = obj
 
     def __str__(self):
@@ -572,7 +580,7 @@ def cli(args):
     print('-' * 80)
     print('* Docking')
 
-    root = Namespace('root', None)
+    root = Namespace('root', None, '')
     table = Table()
 
     while queue:

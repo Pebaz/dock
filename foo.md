@@ -104,6 +104,10 @@ def asdf(self):
 
 It can be multi-line, and contain copyright notices, etc.
 
+- [foo.fooer.asdf](#Function-foo.fooer.asdf)
+- [foo.fooer.ClassOne](#Class-foo.fooer.ClassOne)
+- [foo.fooer.bar](#Function-foo.fooer.bar)
+- [foo.fooer.long_name](#Function-foo.fooer.long_name)
 #### Function `foo.fooer.asdf` 
 
 
@@ -262,6 +266,8 @@ This can contain any helpful information such as the below points:
 
 ## Module `foo.bar.barrer` 
 
+- [foo.bar.barrer.asdf](#Function-foo.bar.barrer.asdf)
+- [foo.bar.barrer.asdf2](#Function-foo.bar.barrer.asdf2)
 #### Function `foo.bar.barrer.asdf` 
 
 
@@ -405,6 +411,7 @@ def some_func(a: int, b: int, c: ASDF) -> Tuple[int, int, int]:
 ### Class `foo.bar.baz.ASDF`
 ## Module `foo.bar.baz.bazzer` 
 
+- [foo.bar.baz.bazzer.asdf](#Function-foo.bar.baz.bazzer.asdf)
 #### Function `foo.bar.baz.bazzer.asdf` 
 
 > "Why does this exist?"
