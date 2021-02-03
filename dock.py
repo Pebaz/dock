@@ -15,118 +15,10 @@ class DockException(Exception):
     """
     Signals that a usage of the `dock` decorator is invalid.
     """
-    def __init__(self):
-        Exception.__init__(self, (
-            'Invalid usage of the `dock` decorator. '
-            'Please use as a decorator atop classes, methods, and functions.'
-        ))
 
 
 # ! Only the classes/functions/methods marked with __dock__ should be included
 # ! in documentation. This is not an all-encompasing documentation generator.
-
-
-class DockFunction:
-    def __init__(self, func):
-        ann = getattr(func, '__annotations__', {})
-        func.__dock__ = {
-            '__name__': func.__name__,
-            '__returntype__': ann.get('return', None),
-            '__returns__': returns,
-            '__raises__': raises,
-            '__annotations__': ann,
-            **argdocs
-        }
-
-
-class DockClass:
-    def __init__(self, class_):
-        self.heirarchy = class_.mro()
-        self.heirarchy.pop(0)  # Don't list self as it's implied
-        print('heirarchy :'.rjust(20), self.heirarchy)
-
-        self.annotations = getattr(class_, '__annotations__', {})
-        print('annotations :'.rjust(20), self.annotations)
-
-        self.desciption = class_.__doc__
-        print('desciption :'.rjust(20), repr(self.desciption))
-
-        self.name = class_.__name__
-        print('name :'.rjust(20), self.name)
-
-        self.inherited_members = set()
-        for ancestor in self.heirarchy:
-            for member in ancestor.__dict__:
-                if not member.startswith('__'):
-                    self.inherited_members.add(member)
-        print('inherited_members :'.rjust(20), self.inherited_members)
-
-        self.members = {i for i in class_.__dict__ if not i.startswith('__')}
-        print('members :'.rjust(20), self.members)
-
-
-# !!!!!!!!!!!!!
-IDEA = """
-@dock(
-    desc='Short one-liner description.',
-    description='Longer multi-paragraph description with sections.'
-
-    desc='sadf',
-    description=dict(
-        section1='asdf',
-        section2='asdf'
-    )
-    usage='',
-
-    # ! Any ARGDOC not a valid arg name is treated as a section!
-    other1='',
-    other2='asdf'
-)
-"""
-
-
-# !!!!!!!!!!!!!
-OUTPUT = """
-# Module `module name`
-
-## Function `function name`
-
-> *Short description NO NEWLINES.*
-
-### Arguments
-
-- `arg1` (TypeName): *arg description*
-- `arg2` (TypeName): *arg description*
-- `arg3` -> `pack.mod.Class1`: *arg description*
-
-Long description
-Long description
-Long description
-
-Long description
-Long description
-Long description
-
-### Usage
-
-```python
-```
-
-```python
-```
-
-### Section1
-
-asdfasdf
-asdfasdf
-
-### Section2
-
-asdfasdf
-asdfasdf
-"""
-
-
 
 # TODO(pebaz): Spreadsheet().add(Column1='asdf', Column2=3)
 # TODO(pebaz): Spreadsheet().add(Other1='asdf', Column2=3)  # Works with empty
@@ -230,7 +122,10 @@ def dock(
     # Takes exactly 0 or 1 positional arguments
     if len(func_or_class) not in {0, 1}:
         print('!!!!!!!!!!!! ->', func_or_class)
-        raise DockException()
+        raise DockException(
+            'Invalid usage of the `dock` decorator. '
+            'Please use as a decorator atop classes, methods, and functions.'
+        )
     
     # Handle: @dock
     elif func_or_class:
@@ -346,12 +241,13 @@ def group(obj: T, root, table):
 
 
 class Namespace:
-    def __init__(self, name, obj, absolute_name):
+    def __init__(self, name, obj, absolute_name):  # ? , output):
         self.name = name
         self.absolute_name = absolute_name
         self.namespace = {}
         self.ref = obj
         self.name_db = {}
+        # ? self.output = output
 
     def register_type(self, type_name, type_class):
         self.name_db[type_name] = type_class
@@ -455,10 +351,11 @@ class Class(Namespace):
 
 
 class Function:
-    def __init__(self, name, obj, absolute_name):
+    def __init__(self, name, obj, absolute_name):  # ? , output):
         self.name = name
         self.absolute_name = absolute_name
         self.ref = obj
+        # ? self.output = output
 
     def __str__(self):
         return f'<FUNCTION {self.name}>'
@@ -563,20 +460,29 @@ class OutputFile:
     def interlink(self, type_, absolute_name):
         ...
 
+
 class MarkdownFile(OutputFile):
     def __init__(self, path):
         self.file = open(path, 'w')
 
-    def write(self, text):
-        self.file.write()
+    def write(self, text, newline='\n'):
+        self.file.write(f'{text}{newline}')
 
     def interlink(self, type_, absolute_name):
         return f'[{absolute_name}](#{type_}-{absolute_name})'
 
+
 class HTMLFile(OutputFile):
+    def __init__(self, path):
+        self.file = open(path, 'w')
+
+    def write(self, text, newline='\n'):
+        self.file.write(f'{text}{newline}')
+
     def interlink(self, type_, absolute_name):
         return f'[{absolute_name}](#{type_}-{absolute_name})'
         return f'<a href="">{absolute_name}</a>'
+
 
 class Folder(OutputFile):
     ...
@@ -631,7 +537,8 @@ def cli(args):
     print('-' * 80)
     print('* Docking')
 
-    root = Namespace('root', None, '')
+    # ? output = MarkdownFile(root)
+    root = Namespace('root', None, '')  # ? , output)
     table = Table()
 
     while queue:
@@ -656,6 +563,7 @@ def cli(args):
 
     # * cls; python dock.py test_dock.py
 
+    # ? output.generate()
 
 # Run the CLI or allow the module to be callable
 if __name__ == '__main__':
