@@ -1,11 +1,10 @@
-import sys
-import importlib
-import inspect
+import sys, time, importlib, inspect, webbrowser
 from types import ModuleType
 from typing import TypeVar, Optional, List, _GenericAlias
 from pathlib import Path
 from collections import deque
 from textwrap import dedent
+from tempfile import NamedTemporaryFile
 
 
 T = TypeVar('T')
@@ -15,10 +14,6 @@ class DockException(Exception):
     """
     Signals that a usage of the `dock` decorator is invalid.
     """
-
-
-# ! Only the classes/functions/methods marked with __dock__ should be included
-# ! in documentation. This is not an all-encompasing documentation generator.
 
 # TODO(pebaz): Spreadsheet().add(Column1='asdf', Column2=3)
 # TODO(pebaz): Spreadsheet().add(Other1='asdf', Column2=3)  # Works with empty
@@ -34,7 +29,7 @@ class Table:
         self.rows = []
         self.col_lens = []
     
-    def add(self, *cells):
+    def add(self, *cells) -> None:
         row = [str(i) for i in cells]
 
         if not self.rows:
@@ -54,7 +49,7 @@ class Table:
             if new_col_len > col_len:
                 self.col_lens[i] = new_col_len
     
-    def show(self):
+    def show(self) -> None:
         start = f'{self.sep}{" " * self.margin}'
         separator = f'{" " * self.margin}{start}'
 
@@ -76,13 +71,6 @@ def dock(
     short: Optional[str] = None,
     **arg_or_field_docs
 ) -> T:
-    """
-    @dock
-    @dock()
-    @dock(returns="")
-    @dock(random="")
-    @dock(1, 2, 3, returns='')
-    """
     """
     ! Must be defined last so that it can put the annotation on the last func.
     """
@@ -121,10 +109,9 @@ def dock(
 
     # Takes exactly 0 or 1 positional arguments
     if len(func_or_class) not in {0, 1}:
-        print('!!!!!!!!!!!! ->', func_or_class)
         raise DockException(
-            'Invalid usage of the `dock` decorator. '
-            'Please use as a decorator atop classes, methods, and functions.'
+            f'Invalid usage of the `dock` decorator for {func_or_class}. '
+            f'Please use as a decorator atop classes, methods, and functions.'
         )
     
     # Handle: @dock
@@ -149,13 +136,13 @@ def dock(
 
 
 # TODO(pebaz): help(some_dock_func) needs to work with the extra doc fields
-def dock_help(obj: T):
+def dock_help(obj: T) -> None:
     pass
 dock.help = dock_help
 
 
 
-def introspect(obj: T, queue: deque):
+def introspect(obj: T, queue: deque) -> None:
     for attr in obj.__dict__.values():
         if hasattr(attr, '__dock__'):
             print(attr, ':', attr.__dock__)
@@ -185,6 +172,21 @@ def get_modules(path: Path) -> List[str]:
     return modules
 
 
+def introspect_modules(modules: List[T], queue: deque) -> None:
+    for module in modules:
+        try:
+            mod = importlib.import_module(module)
+
+            # Allows other modules to import this module
+            sys.modules[module] = mod
+
+            queue.append(mod)  # Preserve output order
+
+            introspect(mod, queue)  # Scrape out all __dock__ed members
+        except Exception as e:
+            print('WARNING: Failed to import', module, ':', e)
+
+
 def get_absolute_name(obj: T) -> str:
     "Used to create interlinks"
 
@@ -208,7 +210,7 @@ def get_absolute_name(obj: T) -> str:
     return absolute_name
 
 
-def group(obj: T, root, table):
+def group(obj: T, root, table) -> None:
     name = obj.__name__
     fully_qualified_name = get_absolute_name(obj)
     namespace_parts = fully_qualified_name.split('.')
@@ -453,47 +455,13 @@ MARKDEEP_HEADER = MarkdeepStyles.JOURNAL
 MARKDEEP_FOOTER = r'<!-- Markdeep: --><style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style><script src="markdeep.min.js" charset="utf-8"></script><script src="https://morgan3d.github.io/markdeep/latest/markdeep.min.js" charset="utf-8"></script><script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>'
 
 
-class OutputFile:
-    def write(self, text):
-        ...
-    
-    def interlink(self, type_, absolute_name):
-        ...
-
-
-class MarkdownFile(OutputFile):
-    def __init__(self, path):
-        self.file = open(path, 'w')
-
-    def write(self, text, newline='\n'):
-        self.file.write(f'{text}{newline}')
-
-    def interlink(self, type_, absolute_name):
-        return f'[{absolute_name}](#{type_}-{absolute_name})'
-
-
-class HTMLFile(OutputFile):
-    def __init__(self, path):
-        self.file = open(path, 'w')
-
-    def write(self, text, newline='\n'):
-        self.file.write(f'{text}{newline}')
-
-    def interlink(self, type_, absolute_name):
-        return f'[{absolute_name}](#{type_}-{absolute_name})'
-        return f'<a href="">{absolute_name}</a>'
-
-
-class Folder(OutputFile):
-    ...
-
-
 def cli(args):
-    if not args:
+    if not args or args[0] == '--show':
         print('Dock - Python documentation generator')
-        print('Usage: dock (<module filename> | <package path>)')
+        print('Usage: dock (<module filename> | <package path>) [--show]')
         quit()
 
+    only_show = '--show' in args
     given_path = Path(args[0])
 
     if not given_path.exists():
@@ -518,18 +486,7 @@ def cli(args):
     print('* Introspecting')
 
     # TODO(pebaz): Extract into function
-    for module in modules:
-        try:
-            mod = importlib.import_module(module)
-
-            # Allows other modules to import this module
-            sys.modules[module] = mod
-
-            queue.append(mod)  # Preserve output order
-
-            introspect(mod, queue)  # Scrape out all __dock__ed members
-        except Exception as e:
-            print('WARNING: Failed to import', module, ':', e)
+    introspect_modules(modules, queue)
 
     print('*')
 
@@ -537,8 +494,7 @@ def cli(args):
     print('-' * 80)
     print('* Docking')
 
-    # ? output = MarkdownFile(root)
-    root = Namespace('root', None, '')  # ? , output)
+    root = Namespace('root', None, '')
     table = Table()
 
     while queue:
@@ -551,19 +507,29 @@ def cli(args):
     print('-' * 80)
     print('* Namespacing')
     import json
-    # print(json.dumps(root.as_dict(), indent=4))
+    print(json.dumps(root.as_dict(), indent=4))
 
     print()
     print('-' * 80)
     print('* Generating')
-    output_file = open('foo.md.html', 'w')
+
+    if only_show:
+        output_file = NamedTemporaryFile('w', delete=False, suffix='.html')
+    else:
+        output_file = open(f'{given_path.stem}.md.html', 'w')
+
     output_file.write(MARKDEEP_HEADER)
     generate_namespace(root, root.name_db, output_file)
     output_file.write(MARKDEEP_FOOTER)
+    output_file.close()
 
-    # * cls; python dock.py test_dock.py
+    if only_show:
+        normalized_path = output_file.name.replace('\\', '/')
+        uri = f'file://{normalized_path}'
+        webbrowser.get().open(uri)
+        time.sleep(2)
+        Path(output_file.name).unlink()
 
-    # ? output.generate()
 
 # Run the CLI or allow the module to be callable
 if __name__ == '__main__':
