@@ -83,6 +83,19 @@ can be raised from a function.
 > Ironically, Dock purposely *does not have hosted docs*. Everything you need to
 know is in this README.
 
+### @dock Decorator
+
+There are several built-in documentation sections that can be used:
+* returns: Explaination of return value.
+* raises: Explaination of return value.
+* short: One liner briefly describing what the callable does.
+
+All other keyword arguments are handled differently depending on the type of
+the callable (function/method or class):
+* Function: kwargs matching annotated arguments describe those arguments.
+Leftover kwargs are added to output as entirely new sections.
+* Class: Only kwargs are used and are used to desribe class fields.
+
 ### Command Line Interface
 
 > NOTE: It is important that you change directory to the root of a given project
@@ -90,10 +103,8 @@ so that Dock will be able to properly handle relative imports to their fullest.
 
 ```bash
 $ cd to-project-root/  # Important
-$ dock module.py  # Defaults are one page HTML document
+$ dock module.py
 $ dock package
-$ dock module.py --out some-file.html  # Generate HTML page
-$ dock package --out some-file.md  # Generate Markdown page
 $ dock module.py --show  # Generate temp docs and open in system web browser
 $ dock package --show
 ```

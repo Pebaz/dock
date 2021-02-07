@@ -37,11 +37,18 @@ def dock(
     >>> @dock(raises='A TypeError if something went wrong')
     >>> @dock(raises='...', Section1='...', Section2='...')
 
-    Can be used as an annotation above classes, methods, and functions.
+    Can be used as an decorator above classes, methods, and functions.
 
     There are several built-in documentation sections that can be used:
      - returns: Explaination of return value.
      - raises: Explaination of return value.
+     - short: One liner briefly describing what the callable does.
+    
+    All other keyword arguments are handled differently depending on the type of
+    the callable (function/method or class):
+     - Function: kwargs matching annotated arguments describe those arguments.
+     - Function: Leftover kwargs are added to output as entirely new sections.
+     - Class: Only kwargs are used and are used to desribe class fields.
     
     Any valid Markdown string is supported but may interfere with existing
     generation. To be the most precise, Dock documentation strings (dockstrings)
