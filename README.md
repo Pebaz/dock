@@ -78,6 +78,15 @@ decorator takes a set of known arguments that can be used to specify extra
 documentation for things that Python makes difficult such as any exceptions that
 can be raised from a function.
 
+## Features
+
+* Simple, 1-file HTML output
+* Small and fast: Dock decorator and CLI are about 500 lines of code combined
+* Pure Python
+* Crossplatform: Works on Any Platform Python runs (Windows, MacOS, Linux, etc.)
+* Multi-line strings are properly dedented
+* Markdown syntax supported in **Dock**strings
+
 ## Documentation
 
 > Ironically, Dock purposely *does not have hosted docs*. Everything you need to
@@ -111,8 +120,17 @@ $ dock package --show
 
 ## Notes
 
-Dock doesn't work well with nested functions because function bodies are not
+* Dock doesn't work well with nested functions because function bodies are not
 evaluated until they are called. What this means is that if you want to docment
 a nested function, Dock won't be able to generate docs for it since it can only
 see the objects that are within the module's global scope or can be introspected
 off of a given class.
+
+* The `@dock` decorator should be placed before any other decorators on top of the
+function although this may be customized depending how the other decorators
+transform the function. Dock's decorator just needs to add a `__dock__`
+attribute to the function/class.
+
+* Functions that have arguments that don't have type hints won't show up in the
+generated output. It is assumed that if Dock is being used with a function, that
+function needs to have proper type hints.
