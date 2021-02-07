@@ -1,4 +1,8 @@
-import sys, time, importlib, inspect, webbrowser
+import sys
+import time
+import importlib
+import inspect
+import webbrowser
 from types import ModuleType
 from typing import TypeVar, Optional, List, _GenericAlias
 from pathlib import Path
@@ -65,7 +69,7 @@ def dock(
             f'Invalid usage of the `dock` decorator for {func_or_class}. '
             f'Please use as a decorator atop classes, methods, and functions.'
         )
-    
+
     # Handle: @dock
     elif func_or_class:
         (func_or_class,) = func_or_class
@@ -90,16 +94,16 @@ def dock(
 # TODO(pebaz): help(some_dock_func) needs to work with the extra doc fields
 def dock_help(obj: T) -> None:
     pass
-dock.help = dock_help
 
+
+dock.help = dock_help
 
 
 def introspect(obj: T, queue: deque) -> None:
     for attr in obj.__dict__.values():
         if hasattr(attr, '__dock__'):
-            print(attr, ':', attr.__dock__)
             queue.append(attr)
-        
+
         if isinstance(attr, type):
             introspect(attr, queue)
 
@@ -113,7 +117,6 @@ def get_modules(path: Path) -> List[str]:
 
     elif path.suffix == '.py':
         mod = '.'.join([*path.parts][:-1] + [path.stem])
-        # ? Remove __init__.py's
         modules.append(mod)
 
     # Ensures that packages (__init__.py) are imported prior to their modules
@@ -158,7 +161,7 @@ def get_absolute_name(obj: T) -> str:
 
     else:  # Methods or Functions
         absolute_name = f'{MODULE.replace(".__init__", "")}.{full_name}'
-    
+
     return absolute_name
 
 
@@ -177,7 +180,7 @@ def group(obj: T, root) -> None:
 
     elif isinstance(obj, ModuleType):  # Module
         type_to_register = Module(first_name, obj, fully_qualified_name)
-    
+
     elif isinstance(obj, type):  # Class
         type_to_register = Class(first_name, obj, fully_qualified_name)
 
@@ -207,10 +210,10 @@ class Namespace:
 
     def new(self, namespace):
         self.namespace[namespace.name] = namespace
-    
+
     def get(self, name):
         return self.namespace[name]
-    
+
     def as_dict(self):
         result = {'__dock_self__': str(self.ref)}
         for name, value in self.namespace.items():
@@ -236,7 +239,7 @@ class Namespace:
                 self.namespace.values()
             )
         ]
-        
+
     def generate(self, name_db, out):
         print(self.header(), **out)
 
@@ -244,7 +247,7 @@ class Namespace:
 class Package(Namespace):
     def __str__(self):
         return f'<PACKAGE {self.name}>'
-    
+
     def header(self):
         return f'# Package `{get_absolute_name(self.ref)}`'
 
@@ -283,7 +286,7 @@ class Class(Namespace):
 
     def header(self):
         return f'### Class `{get_absolute_name(self.ref)}`'
-    
+
     def generate(self, name_db, out):
         print(self.header(), **out)
 
@@ -344,7 +347,6 @@ class Function:
                 else:
                     print(f'- `{argument}` -> `{type_}`: {desc}', **out)
 
-
             print('\n', **out)
 
             # Return Type
@@ -387,7 +389,7 @@ def generate_namespace(namespace, name_db, file=None):
 
 
 class MarkdeepStyles:
-    __header = r'<link rel="stylesheet" href="https://casual-effects.com/markdeep/latest/{}.css?">'
+    __header = r'<link rel="stylesheet" href="https://casual-effects.com/markdeep/latest/{}.css?">'  # noqa: E501
     DEFAULT = ''
     JOURNAL = __header.format('journal')
     APIDOC = __header.format('apidoc')
@@ -400,7 +402,7 @@ class MarkdeepStyles:
 
 
 MARKDEEP_HEADER = MarkdeepStyles.JOURNAL
-MARKDEEP_FOOTER = r'<!-- Markdeep: --><style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style><script src="markdeep.min.js" charset="utf-8"></script><script src="https://morgan3d.github.io/markdeep/latest/markdeep.min.js" charset="utf-8"></script><script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>'
+MARKDEEP_FOOTER = r'<!-- Markdeep: --><style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style><script src="markdeep.min.js" charset="utf-8"></script><script src="https://morgan3d.github.io/markdeep/latest/markdeep.min.js" charset="utf-8"></script><script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>'  # noqa: E501
 
 
 def cli(args):
@@ -420,43 +422,13 @@ def cli(args):
     sys.path.insert(0, str(Path().resolve()))
 
     queue = deque()  # deque is threadsafe for append & popleft. Use it
-
-    print()
-    print('-' * 80)
-    print('* Modules')
     modules = get_modules(given_path)
-
-    for m in modules:
-        print(m)
-
-    print()
-    print('-' * 80)
-    print('* Introspecting')
-
-    # TODO(pebaz): Extract into function
     introspect_modules(modules, queue)
-
-    print('*')
-
-    print()
-    print('-' * 80)
-    print('* Docking')
-
     root = Namespace('root', None, '')
 
     while queue:
         item = queue.popleft()
         group(item, root)
-
-    print()
-    print('-' * 80)
-    print('* Namespacing')
-    import json
-    print(json.dumps(root.as_dict(), indent=4))
-
-    print()
-    print('-' * 80)
-    print('* Generating')
 
     if only_show:
         output_file = NamedTemporaryFile('w', delete=False, suffix='.html')
@@ -480,4 +452,4 @@ def cli(args):
 if __name__ == '__main__':
     cli(sys.argv[1:])
 else:
-	sys.modules[__name__] = dock  
+    sys.modules[__name__] = dock
