@@ -194,13 +194,12 @@ def group(obj: T, root) -> None:
 
 
 class Namespace:
-    def __init__(self, name, obj, absolute_name):  # ? , output):
+    def __init__(self, name, obj, absolute_name):
         self.name = name
         self.absolute_name = absolute_name
         self.namespace = {}
         self.ref = obj
         self.name_db = {}
-        # ? self.output = output
 
     def register_type(self, type_name, type_class):
         self.name_db[type_name] = type_class
@@ -304,11 +303,10 @@ class Class(Namespace):
 
 
 class Function:
-    def __init__(self, name, obj, absolute_name):  # ? , output):
+    def __init__(self, name, obj, absolute_name):
         self.name = name
         self.absolute_name = absolute_name
         self.ref = obj
-        # ? self.output = output
 
     def __str__(self):
         return f'<FUNCTION {self.name}>'
