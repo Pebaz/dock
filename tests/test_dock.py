@@ -34,67 +34,45 @@ def test_dock(cases):
 
 
 
-# @pytest.mark.parametrize('cases', [
-#     case({}, {
-#         'arguments': {},
-#         'raises': None,
-#         'returns': None,
-#         'sections': {},
-#         'short': None
-#     }),
-#     case({'c': 3}, {
-#         'arguments': {'c': 3},
-#         'raises': None,
-#         'returns': None,
-#         'sections': {},
-#         'short': None
-#     }),
-#     case({'raises': 'What?'}, {
-#         'arguments': {},
-#         'raises': 'What?',
-#         'returns': None,
-#         'sections': {},
-#         'short': None
-#     }),
-#     case({'c': 3, 'returns': 'What?'}, {
-#         'arguments': {'c': 3},
-#         'raises': None,
-#         'returns': 'What?',
-#         'sections': {},
-#         'short': None
-#     }),
-# ])
-# def test_dock_arguments(cases):
-#     def some_function(a: int, b: float) -> bool:
-#         return a > b
+@pytest.mark.parametrize('cases', [
+    case({}, EMPTY_DOCK),
+    case(dict(a=1), {**EMPTY_DOCK, **{'arguments': dict(a=1)}}),
+    case(dict(a=1, b=2), {**EMPTY_DOCK, **{'arguments': dict(a=1, b=2)}})
+])
+def test_dock_arguments(cases):
+    def some_function(a: int, b: float) -> bool:
+        return a > b
 
-#     dock_obj = dock(**cases['in'])(some_function)
-#     assert dock_obj.__dock__ == (cases['out'] or cases['in'])
+    dock_obj = dock(**cases['in'])(some_function)
+    assert dock_obj.__dock__ == (cases['out'] or cases['in'])
 
 
-# @pytest.mark.parametrize('cases', [
-#     case({}, dict(fields={})),
-#     case({'a': 3}, dict(fields={'a': 1})),
-#     case({'a': 1, 'Usage': '...'}, dict(fields={'a': 1, 'Usage': '...'})),
-# ])
-# def test_dock_classes(cases):
-#     class SomeClass:
-#         "???"
+@pytest.mark.parametrize('cases', [
+    case({}, dict(fields={})),
+    case({'a': 1}, dict(fields={'a': 1})),
+    case({'a': 1, 'Usage': '...'}, dict(fields={'a': 1, 'Usage': '...'})),
+])
+def test_dock_classes(cases):
+    class SomeClass:
+        "???"
 
-#     dock_obj = dock(**cases['in'])(SomeClass)
-#     print(dock_obj.__dock__, cases['out'])
-#     assert dock_obj.__dock__ == (cases['out'] or cases['in'])
+    dock_obj = dock(**cases['in'])(SomeClass)
+    assert dock_obj.__dock__ == (cases['out'] or cases['in'])
 
 
-# @pytest.mark.parametrize('cases', [
-#     case({}, dict(fields={})),
-#     case({'a': 1}, dict(fields={'a': 1})),
-#     case({'a': 1, 'Usage': '...'}, dict(fields={'a': 1, 'Usage': '...'})),
-# ])
-# def test_dock_class_methods(cases):
-#     class SomeClass:
-#         def foo(self):
-#             "???"
+@pytest.mark.parametrize('cases', [
+    case({}, {**EMPTY_DOCK, **dict(arguments={})}),
+    case({'x': 1}, {**EMPTY_DOCK, **dict(arguments={'x': 1})}),
+    case({'x': 1, 'y': 2}, {**EMPTY_DOCK, **dict(arguments={'x': 1, 'y': 2})}),
+    case(
+        {'x': 1, 'y': 2, 'z': 3},
+        {**EMPTY_DOCK, **dict(arguments={'x': 1, 'y': 2}, sections=dict(z=3))}
+    ),
+])
+def test_dock_class_methods(cases):
+    class SomeClass:
+        def foo(self, x: int, y: float):
+            "???"
 
-#     dock_obj = dock(**cases['in'])(SomeClass)
-#     assert dock_obj.__dock__ == (cases['out'] or cases['in'])
+    dock_obj = dock(**cases['in'])(SomeClass.foo)
+    assert dock_obj.__dock__ == (cases['out'] or cases['in'])
