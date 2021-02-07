@@ -7,7 +7,8 @@ setup(
 	py_modules=['dock'],
 	entry_points={
 		'console_scripts' : [
-			'dock=dock:cli'
+			'dock=dock:dock'
 		]
-	}
+	},
+	install_requires=['dock-python-cli']
 )

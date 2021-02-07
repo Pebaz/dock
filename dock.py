@@ -446,7 +446,7 @@ def cli(args):
     # ! THIS IS VITALLY IMPORTANT (prevents site-packages preferal)
     sys.path.insert(0, str(Path().resolve()))
 
-    queue = deque()  # deque is threadsafe for append & popleft. Use it
+    queue = deque()
     modules = get_modules(given_path)
     introspect_modules(modules, queue)
     root = Namespace('root', None, '')
@@ -473,7 +473,6 @@ def cli(args):
         Path(output_file.name).unlink()
 
 
-# Run the CLI or allow the module to be callable
 if __name__ == '__main__':
     cli(sys.argv[1:])
 else:
