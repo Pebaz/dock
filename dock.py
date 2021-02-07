@@ -15,54 +15,6 @@ class DockException(Exception):
     Signals that a usage of the `dock` decorator is invalid.
     """
 
-# TODO(pebaz): Spreadsheet().add(Column1='asdf', Column2=3)
-# TODO(pebaz): Spreadsheet().add(Other1='asdf', Column2=3)  # Works with empty
-# TODO(pebaz): This ensure that a header line is printed
-
-
-class Table:
-    def __init__(self, margin=1, sep='|', align='center'):
-        assert align in {'center', 'ljust', 'rjust'}
-        self.margin = margin
-        self.sep = sep
-        self.align = align
-        self.rows = []
-        self.col_lens = []
-    
-    def add(self, *cells) -> None:
-        row = [str(i) for i in cells]
-
-        if not self.rows:
-            self.col_lens = [len(i) for i in row]
-
-        self.rows.append(row)
-
-        for i in range(max(len(self.col_lens), len(row))):
-            if i >= len(row):
-                break
-            new_col_len = len(row[i])
-
-            if i >= len(self.col_lens):
-                self.col_lens.append(new_col_len)
-            col_len = self.col_lens[i]
-
-            if new_col_len > col_len:
-                self.col_lens[i] = new_col_len
-    
-    def show(self) -> None:
-        start = f'{self.sep}{" " * self.margin}'
-        separator = f'{" " * self.margin}{start}'
-
-        for row in self.rows:
-            print(start, end='')
-            for i, cell in enumerate(row):
-                if i >= len(self.col_lens):
-                    break
-                col_len = self.col_lens[i]
-                line = getattr(str(cell), self.align)(col_len)
-                print(line, end=separator)
-            print()
-
 
 def dock(
     *func_or_class,
@@ -210,7 +162,7 @@ def get_absolute_name(obj: T) -> str:
     return absolute_name
 
 
-def group(obj: T, root, table) -> None:
+def group(obj: T, root) -> None:
     name = obj.__name__
     fully_qualified_name = get_absolute_name(obj)
     namespace_parts = fully_qualified_name.split('.')
@@ -221,21 +173,17 @@ def group(obj: T, root, table) -> None:
         namespace = namespace.get(each_name)
 
     if isinstance(obj, ModuleType) and name.endswith('__init__'):  # Package
-        table.add('PACKAGE', fully_qualified_name)
         type_to_register = Package(first_name, obj, fully_qualified_name)
 
     elif isinstance(obj, ModuleType):  # Module
-        table.add('MODULE', fully_qualified_name)
         type_to_register = Module(first_name, obj, fully_qualified_name)
     
     elif isinstance(obj, type):  # Class
-        table.add('CLASS', fully_qualified_name)
         type_to_register = Class(first_name, obj, fully_qualified_name)
 
     # * Not making a distinction here between methods/functions since this can
     # * get extremely mirky when sorting them out. No meaning is lost anyway.
     elif callable(obj):  # Function
-        table.add('FUNCTION', fully_qualified_name)
         type_to_register = Function(first_name, obj, fully_qualified_name)
 
     namespace.new(type_to_register)
@@ -495,13 +443,10 @@ def cli(args):
     print('* Docking')
 
     root = Namespace('root', None, '')
-    table = Table()
 
     while queue:
         item = queue.popleft()
-        group(item, root, table)
-
-    table.show()
+        group(item, root)
 
     print()
     print('-' * 80)
