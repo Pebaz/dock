@@ -28,7 +28,27 @@ def dock(
     **arg_or_field_docs
 ) -> T:
     """
-    ! Must be defined last so that it can put the annotation on the last func.
+    Enriches callables with a __dock__ attribute for documentation generation.
+
+    Can be called in the following ways:
+
+    >>> @dock
+    >>> @dock()
+    >>> @dock(raises='A TypeError if something went wrong')
+    >>> @dock(raises='...', Section1='...', Section2='...')
+
+    Can be used as an annotation above classes, methods, and functions.
+
+    There are several built-in documentation sections that can be used:
+     - returns: Explaination of return value.
+     - raises: Explaination of return value.
+    
+    Any valid Markdown string is supported but may interfere with existing
+    generation. To be the most precise, Dock documentation strings (dockstrings)
+    can match Markdeep format, but advanced features of Markdeep are not
+    guaranteed to work well with existing output.
+
+    Documentation for Markdeep: https://casual-effects.com/markdeep/
     """
 
     def inner(func_or_class: T) -> T:
@@ -91,12 +111,12 @@ def dock(
         return inner
 
 
-# TODO(pebaz): help(some_dock_func) needs to work with the extra doc fields
-def dock_help(obj: T) -> None:
-    pass
-
-
-dock.help = dock_help
+# TODO(pebaz): Flesh this out if it seems useful
+# def dock_help(obj: T) -> None:
+#     if hasattr(obj, '__dock__'):
+#         print(f'Help for {type(obj)}:')
+#         print(obj.__dock__)
+# dock.help = dock_help
 
 
 def introspect(obj: T, queue: deque) -> None:
@@ -299,7 +319,7 @@ class Class(Namespace):
         if self.ref.__doc__:
             print(dedent(self.ref.__doc__), **out)
 
-        # TODO(pebaz): Print out class heirarchy using MRO
+        # TODO(pebaz): Print out class heirarchy using MRO if it seems useful
 
 
 class Function:
