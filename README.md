@@ -1,3 +1,7 @@
+<p align=center>
+    <img src="misc/Dock.png" width=60% alt="Dock Logo: Deliberate Documentation">
+</p>
+
 # dock - *deliberate documentation*
 
 Simple to use documentation generator
@@ -49,7 +53,7 @@ class IncludedClass:
 
     def ignored(self):
         "Ignored"
-    
+
     @dock(raises='A BoffinException')
     def boffin(self):
         raise BoffinException()
